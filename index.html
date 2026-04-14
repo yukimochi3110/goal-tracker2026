@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>目標チェック</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root { --bg: #F2FAF5; --surface: #FFFFFF; --text: #2C3C32; --text-sub: #82A08C; --border: #D4EAD9; --accent: #44B872; --accent-light: #E8F8EE; --g-from: #8ED4A8; --g-to: #38AD6C; --sun: #C84848; --sat: #4070C0; --wknd-bg: #FAF7F2; --shadow: 0 2px 14px rgba(30,80,50,0.07); --radius: 14px; --font: 'Noto Sans JP', sans-serif; }
@@ -142,25 +143,25 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 
 /* ── Body composition ── */
 .body-form-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; margin-bottom: 16px; }
-.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 12px; }
 .form-group { display: flex; flex-direction: column; gap: 4px; }
 .form-label { font-size: 11px; font-weight: 600; color: var(--text-sub); }
-.form-input { border: 1px solid var(--border); border-radius: 8px; padding: 9px 10px; font-size: 14px; font-family: var(--font); background: var(--bg); color: var(--text); }
+.form-input { width: 100%; border: 1px solid var(--border); border-radius: 8px; padding: 9px 10px; font-size: 14px; font-family: var(--font); background: var(--bg); color: var(--text); }
 .form-input:focus { outline: none; border-color: var(--accent); }
-.form-sel { border: 1px solid var(--border); border-radius: 8px; padding: 9px 10px; font-size: 14px; font-family: var(--font); background: var(--bg); color: var(--text); }
+.form-sel { width: 100%; border: 1px solid var(--border); border-radius: 8px; padding: 9px 10px; font-size: 14px; font-family: var(--font); background: var(--bg); color: var(--text); }
 .submit-btn { width: 100%; background: linear-gradient(135deg, var(--g-from) 0%, var(--g-to) 100%); color: #fff; border: none; border-radius: 50px; padding: 13px; font-size: 14px; font-weight: 700; font-family: var(--font); cursor: pointer; transition: opacity 0.2s; box-shadow: 0 4px 12px rgba(56,173,108,0.3); letter-spacing: 0.3px; }
 .submit-btn:hover { opacity: 0.88; }
-.chart-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; margin-bottom: 16px; }
+.chart-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; margin-bottom: 16px; overflow-x: auto; }
 .chart-label { font-size: 11px; font-weight: 600; color: var(--text-sub); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px; }
-.bar-chart { display: flex; align-items: flex-end; gap: 6px; height: 100px; padding-top: 20px; }
-.bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 24px; position: relative; }
+.bar-chart { display: flex; align-items: flex-end; gap: 4px; height: 100px; padding-top: 20px; min-width: 280px; }
+.bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 18px; position: relative; }
 .bar-rect { width: 100%; border-radius: 4px 4px 0 0; position: relative; min-height: 3px; transition: height 0.5s ease; }
 .bar-val { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); font-size: 9px; font-weight: 600; color: var(--text-sub); white-space: nowrap; }
 .bar-lbl { font-size: 9px; color: var(--text-sub); }
-.data-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
-.data-table { width: 100%; border-collapse: collapse; }
-.data-table th { padding: 9px 10px; font-size: 11px; font-weight: 600; color: var(--text-sub); background: var(--bg); border-bottom: 2px solid var(--border); text-align: center; }
-.data-table td { padding: 9px 10px; border-bottom: 1px solid var(--border); text-align: center; font-size: 13px; }
+.data-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); overflow-x: auto; }
+.data-table { width: 100%; border-collapse: collapse; min-width: 300px; }
+.data-table th { padding: 9px 8px; font-size: 11px; font-weight: 600; color: var(--text-sub); background: var(--bg); border-bottom: 2px solid var(--border); text-align: center; white-space: nowrap; }
+.data-table td { padding: 9px 8px; border-bottom: 1px solid var(--border); text-align: center; font-size: 12px; }
 .data-table tr:last-child td { border-bottom: none; }
 .del-btn { background: none; border: 1px solid #E0B0B0; color: #C04040; border-radius: 6px; padding: 3px 8px; font-size: 11px; cursor: pointer; }
 .del-btn:hover { background: #FEF0F0; }
@@ -257,7 +258,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 
 // ── Firebase SDK ──
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { getAuth, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { getFirestore, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const firebaseConfig = {
@@ -270,6 +271,7 @@ const firebaseConfig = {
 };
 const fbApp = initializeApp(firebaseConfig);
 const auth = getAuth(fbApp);
+await setPersistence(auth, browserLocalPersistence); // iOS Safari ITP対策：localStorageに永続化
 const db = getFirestore(fbApp);
 const gProvider = new GoogleAuthProvider();
 let currentUser = null;
@@ -348,8 +350,16 @@ async function loadFromFirestore() {
 }
 
 async function login() {
-  try { await signInWithPopup(auth, gProvider); }
-  catch(e) { if (e.code !== 'auth/popup-closed-by-user') alert('ログインに失敗しました: ' + e.message); }
+  try {
+    await signInWithPopup(auth, gProvider);
+  } catch(e) {
+    if (e.code === 'auth/popup-blocked') {
+      // ポップアップがブロックされた場合はリダイレクトにフォールバック
+      await signInWithRedirect(auth, gProvider);
+    } else if (e.code !== 'auth/popup-closed-by-user') {
+      alert('ログインに失敗しました: ' + e.message);
+    }
+  }
 }
 
 async function logout() {
@@ -992,6 +1002,16 @@ document.getElementById('overlay').addEventListener('click', e => {
   if (e.target.id === 'overlay') closeSettings();
 });
 document.getElementById('login-btn').onclick = login;
+
+// リダイレクトログイン後の結果を受け取る（ポップアップがブロックされた場合のフォールバック）
+try {
+  await getRedirectResult(auth);
+} catch(e) {
+  // auth/missing-initial-state はiOS SafariのITPによるもの。無視する
+  if (e.code && e.code !== 'auth/missing-initial-state') {
+    console.warn('Redirect auth error:', e.code);
+  }
+}
 
 // Set login screen logo icon (rendered after ico() is defined, via init below)
 const loginLogoEl = document.getElementById('login-logo-icon');
