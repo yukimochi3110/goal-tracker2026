@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>目標チェック</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #F2FAF5; --surface: #FFFFFF; --text: #2C3C32; --text-sub: #82A08C; --border: #D4EAD9; --accent: #44B872; --accent-light: #E8F8EE; --g-from: #8ED4A8; --g-to: #38AD6C; --sun: #C84848; --sat: #4070C0; --wknd-bg: #FAF7F2; --shadow: 0 2px 14px rgba(30,80,50,0.07); --radius: 14px; --font: 'Noto Sans JP', sans-serif; }
+@media (prefers-color-scheme: dark) { :root { --bg: #161E18; --surface: #1E2A20; --text: #D4ECD8; --text-sub: #689A72; --border: #2A3C2E; --accent: #5CD48A; --accent-light: #1A2E1E; --g-from: #4A9060; --g-to: #287048; --sun: #D46868; --sat: #5090D0; --wknd-bg: #1C2218; --shadow: 0 2px 16px rgba(0,0,0,0.3); } }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body { font-family: var(--font); background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+#app { max-width: 540px; margin: 0 auto; min-height: 100dvh; display: flex; flex-direction: column; }
+
+/* ── Header ── */
+.header { background: linear-gradient(135deg, var(--g-from) 0%, var(--g-to) 100%); padding: 0 16px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(56,173,108,0.3); }
+.header-title { font-size: 16px; font-weight: 700; color: #fff; letter-spacing: 0.5px; padding: 14px 0; display: flex; align-items: center; gap: 7px; }
+.header-right { display: flex; align-items: center; gap: 8px; }
+.settings-btn { background: rgba(255,255,255,0.18); border: none; cursor: pointer; padding: 6px; color: #fff; border-radius: 8px; display: flex; align-items: center; transition: background 0.15s; }
+.settings-btn:hover { background: rgba(255,255,255,0.3); }
+
+/* ── Tabs ── */
+.tabs { background: var(--surface); border-bottom: 1px solid var(--border); display: flex; }
+.tab-btn { flex: 1; border: none; background: none; font-family: var(--font); font-size: 13px; font-weight: 500; color: var(--text-sub); padding: 12px 0; cursor: pointer; position: relative; transition: color 0.2s; }
+.tab-btn.active { color: var(--accent); font-weight: 700; }
+.tab-btn.active::after { content: ''; position: absolute; bottom: 0; left: 20%; right: 20%; height: 2px; background: var(--accent); border-radius: 2px 2px 0 0; }
+
+/* ── Pages ── */
+.page { display: none; flex: 1; padding: 16px; overflow-y: auto; }
+.page.active { display: block; }
+
+/* ── Cards ── */
+.card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; margin-bottom: 16px; }
+.card-header { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.card-title { font-size: 12px; font-weight: 600; color: var(--text-sub); letter-spacing: 1px; text-transform: uppercase; }
+
+/* ── Achievement Rings ── */
+.rings-row { display: flex; gap: 0; overflow-x: auto; padding: 16px; -webkit-overflow-scrolling: touch; }
+.rings-row::-webkit-scrollbar { display: none; }
+.ring-item { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 0 12px; position: relative; }
+.ring-item:not(:last-child) { border-right: 1px solid var(--border); }
+.ring-wrapper { position: relative; }
+.ring-name { font-size: 11px; color: var(--text-sub); display: flex; align-items: center; gap: 3px; }
+.streak-badge { position: absolute; top: -4px; right: -8px; background: #E07820; color: #fff; border-radius: 10px; font-size: 10px; font-weight: 700; padding: 1px 5px; display: flex; align-items: center; gap: 1px; white-space: nowrap; }
+
+/* ── Month nav ── */
+.month-nav-row { display: flex; align-items: center; justify-content: space-between; padding: 4px 16px 12px; }
+.nav-arrow-btn { background: none; border: 1px solid var(--border); border-radius: 8px; padding: 5px 14px; cursor: pointer; color: var(--text-sub); font-size: 18px; line-height: 1; transition: background 0.15s; }
+.nav-arrow-btn:hover { background: var(--bg); }
+.month-heading { font-size: 18px; font-weight: 700; color: var(--text); }
+
+/* ── Calendar Table ── */
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.cal-table { width: 100%; border-collapse: collapse; }
+.cal-table thead th { background: var(--bg); padding: 8px 6px; font-size: 11px; font-weight: 600; color: var(--text-sub); text-align: center; border-bottom: 2px solid var(--border); border-right: 1px solid var(--border); white-space: nowrap; position: sticky; top: 0; }
+.cal-table thead th:first-child { text-align: left; padding-left: 8px; border-right: 2px solid var(--border); min-width: 44px; }
+.cal-table thead th.th-memo { text-align: left; padding-left: 10px; min-width: 130px; border-right: none; }
+.cal-table thead th .th-icon { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+
+/* Day rows */
+.cal-day-row td { border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); vertical-align: middle; padding: 3px 4px; }
+.cal-day-row td:first-child { border-right: 2px solid var(--border); padding-left: 8px; }
+.cal-day-row td:last-child { border-right: none; }
+.cal-day-row.wknd { background: var(--wknd-bg); }
+.cal-day-row.today td { background: var(--accent-light); }
+
+/* Date cell */
+.date-cell { white-space: nowrap; }
+.date-num { font-size: 14px; font-weight: 700; line-height: 1.1; }
+.date-dow { font-size: 10px; color: var(--text-sub); }
+.is-sun .date-num, .is-sun .date-dow { color: var(--sun); }
+.is-sat .date-num, .is-sat .date-dow { color: var(--sat); }
+.today-circle { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; background: var(--accent); color: #fff; border-radius: 50%; font-size: 13px; font-weight: 700; }
+
+/* Check button */
+.check-cell { text-align: center; }
+.check-btn { background: transparent; border: none; width: 100%; height: 32px; padding: 0; text-align: center; font-size: 14px; font-family: var(--font); font-weight: 600; color: var(--text-sub); cursor: pointer; transition: transform 0.1s, color 0.15s; display: block; }
+.check-btn:focus { outline: none; }
+.check-btn:active { transform: scale(0.85); }
+
+/* Memo cell */
+.memo-cell { padding: 4px 8px !important; min-width: 130px; }
+.memo-preview-text { font-size: 11px; color: var(--text); cursor: pointer; display: block; line-height: 1.4; transition: color 0.15s; }
+.memo-preview-text:hover { color: var(--accent); }
+.memo-add-btn { font-size: 11px; color: var(--border); cursor: pointer; }
+.memo-add-btn:hover { color: var(--accent); }
+
+/* Memo edit row */
+.memo-edit-row { display: none; }
+.memo-edit-row.open { display: table-row; }
+.memo-edit-row td { padding: 0; border-bottom: 2px solid var(--accent); background: var(--accent-light); }
+.memo-edit-inner { padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.memo-goal-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.memo-tag-btn { font-size: 11px; padding: 3px 8px; border-radius: 10px; cursor: pointer; border: none; font-family: var(--font); }
+.memo-textarea { width: 100%; border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 13px; font-family: var(--font); background: var(--surface); color: var(--text); resize: vertical; min-height: 60px; }
+.memo-textarea:focus { outline: none; border-color: var(--accent); }
+.memo-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.memo-save-btn { background: linear-gradient(135deg, var(--g-from) 0%, var(--g-to) 100%); color: #fff; border: none; border-radius: 50px; padding: 6px 18px; font-size: 12px; font-weight: 600; font-family: var(--font); cursor: pointer; box-shadow: 0 2px 8px rgba(56,173,108,0.25); }
+.memo-cancel-btn { background: none; border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; font-size: 12px; font-family: var(--font); color: var(--text-sub); cursor: pointer; }
+
+/* Month memo */
+.section-block { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; margin-bottom: 16px; }
+.section-label { font-size: 12px; font-weight: 600; color: var(--text-sub); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; display: block; }
+.big-textarea { width: 100%; border: 1px solid var(--border); border-radius: 10px; padding: 12px; font-size: 14px; font-family: var(--font); background: var(--bg); color: var(--text); resize: vertical; min-height: 80px; }
+.big-textarea:focus { outline: none; border-color: var(--accent); }
+
+/* Text view / edit pattern */
+.section-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.edit-link { background: none; border: none; color: var(--accent); font-size: 12px; font-weight: 600; cursor: pointer; font-family: var(--font); padding: 2px 0; }
+.text-block-view { cursor: pointer; min-height: 36px; }
+.text-content { font-size: 14px; line-height: 1.75; color: var(--text); white-space: pre-wrap; word-break: break-all; }
+.text-empty { font-size: 13px; color: var(--border); }
+.text-block-edit { display: none; }
+.text-block-edit.open { display: block; }
+.edit-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 10px; }
+.btn-cancel-sm { background: none; border: 1px solid var(--border); border-radius: 50px; padding: 7px 18px; font-size: 13px; font-family: var(--font); color: var(--text-sub); cursor: pointer; }
+.btn-save { background: linear-gradient(135deg, var(--g-from) 0%, var(--g-to) 100%); color: #fff; border: none; border-radius: 50px; padding: 7px 22px; font-size: 13px; font-weight: 600; font-family: var(--font); cursor: pointer; transition: opacity 0.2s; box-shadow: 0 3px 10px rgba(56,173,108,0.3); }
+.btn-save:hover { opacity: 0.88; }
+
+/* Month review items in annual tab */
+.month-review-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+.month-review-item:last-child { border-bottom: none; }
+.month-review-label { font-size: 12px; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
+.month-review-body { font-size: 13px; color: var(--text); line-height: 1.65; white-space: pre-wrap; word-break: break-all; }
+
+/* ── Annual ── */
+.year-nav-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.year-heading { font-size: 18px; font-weight: 700; }
+.annual-wrap { overflow-x: auto; border-radius: var(--radius); box-shadow: var(--shadow); background: var(--surface); margin-bottom: 16px; }
+.annual-table { width: 100%; border-collapse: collapse; min-width: 500px; }
+.annual-table th { padding: 8px 10px; font-size: 11px; font-weight: 600; color: var(--text-sub); background: var(--bg); border-bottom: 2px solid var(--border); text-align: center; white-space: nowrap; }
+.annual-table th:first-child { text-align: left; min-width: 100px; }
+.annual-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: center; font-size: 12px; }
+.annual-table tr:last-child td { border-bottom: none; }
+.annual-table td:first-child { text-align: left; font-weight: 600; }
+.chip { display: inline-block; border-radius: 6px; padding: 2px 6px; font-weight: 700; font-size: 11px; }
+.chip-hi { background: #E5F5EC; color: #1F7A40; }
+.chip-mi { background: #FEF5E0; color: #9A6500; }
+.chip-lo { background: #FEF0F0; color: #B83030; }
+.chip-em { color: var(--text-sub); font-size: 11px; }
+
+/* ── Body composition ── */
+.body-form-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; margin-bottom: 16px; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.form-group { display: flex; flex-direction: column; gap: 4px; }
+.form-label { font-size: 11px; font-weight: 600; color: var(--text-sub); }
+.form-input { border: 1px solid var(--border); border-radius: 8px; padding: 9px 10px; font-size: 14px; font-family: var(--font); background: var(--bg); color: var(--text); }
+.form-input:focus { outline: none; border-color: var(--accent); }
+.form-sel { border: 1px solid var(--border); border-radius: 8px; padding: 9px 10px; font-size: 14px; font-family: var(--font); background: var(--bg); color: var(--text); }
+.submit-btn { width: 100%; background: linear-gradient(135deg, var(--g-from) 0%, var(--g-to) 100%); color: #fff; border: none; border-radius: 50px; padding: 13px; font-size: 14px; font-weight: 700; font-family: var(--font); cursor: pointer; transition: opacity 0.2s; box-shadow: 0 4px 12px rgba(56,173,108,0.3); letter-spacing: 0.3px; }
+.submit-btn:hover { opacity: 0.88; }
+.chart-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; margin-bottom: 16px; }
+.chart-label { font-size: 11px; font-weight: 600; color: var(--text-sub); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px; }
+.bar-chart { display: flex; align-items: flex-end; gap: 6px; height: 100px; padding-top: 20px; }
+.bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 24px; position: relative; }
+.bar-rect { width: 100%; border-radius: 4px 4px 0 0; position: relative; min-height: 3px; transition: height 0.5s ease; }
+.bar-val { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); font-size: 9px; font-weight: 600; color: var(--text-sub); white-space: nowrap; }
+.bar-lbl { font-size: 9px; color: var(--text-sub); }
+.data-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th { padding: 9px 10px; font-size: 11px; font-weight: 600; color: var(--text-sub); background: var(--bg); border-bottom: 2px solid var(--border); text-align: center; }
+.data-table td { padding: 9px 10px; border-bottom: 1px solid var(--border); text-align: center; font-size: 13px; }
+.data-table tr:last-child td { border-bottom: none; }
+.del-btn { background: none; border: 1px solid #E0B0B0; color: #C04040; border-radius: 6px; padding: 3px 8px; font-size: 11px; cursor: pointer; }
+.del-btn:hover { background: #FEF0F0; }
+.empty-msg { text-align: center; padding: 36px 16px; color: var(--text-sub); font-size: 13px; }
+
+/* ── Settings Modal ── */
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; display: none; align-items: flex-end; justify-content: center; }
+.overlay.open { display: flex; }
+.modal { background: var(--surface); border-radius: 20px 20px 0 0; width: 100%; max-width: 540px; max-height: 88vh; overflow-y: auto; padding: 16px 18px 40px; }
+.modal-bar { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 18px; }
+.modal-h { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+.goal-row { display: flex; align-items: center; gap: 10px; padding: 11px 0; border-bottom: 1px solid var(--border); }
+.goal-icon-box { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.goal-info { flex: 1; }
+.goal-name { font-size: 14px; font-weight: 600; }
+.goal-freq { font-size: 11px; color: var(--text-sub); margin-top: 1px; }
+.goal-del { background: none; border: none; cursor: pointer; padding: 5px; color: var(--text-sub); border-radius: 6px; display: flex; }
+.goal-del:hover { color: #C04040; background: #FEF0F0; }
+.add-section { border-top: 2px solid var(--border); padding-top: 18px; margin-top: 4px; }
+.add-h { font-size: 14px; font-weight: 600; color: var(--accent); margin-bottom: 14px; }
+.field-lbl { font-size: 11px; font-weight: 600; color: var(--text-sub); margin-bottom: 6px; display: block; letter-spacing: 0.5px; }
+.text-input { width: 100%; border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: 14px; font-family: var(--font); background: var(--bg); color: var(--text); margin-bottom: 14px; }
+.text-input:focus { outline: none; border-color: var(--accent); }
+.icon-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-bottom: 14px; }
+.icon-opt { aspect-ratio: 1; border: 2px solid var(--border); border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: var(--surface); transition: all 0.15s; }
+.icon-opt.sel { border-color: var(--accent); background: var(--accent-light); }
+.color-row { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+.color-dot { width: 30px; height: 30px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: all 0.15s; }
+.color-dot.sel { border-color: var(--text); transform: scale(1.1); }
+.freq-sel { width: 100%; border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: 14px; font-family: var(--font); background: var(--bg); color: var(--text); margin-bottom: 16px; }
+.add-goal-btn { width: 100%; background: linear-gradient(135deg, var(--g-from) 0%, var(--g-to) 100%); color: #fff; border: none; border-radius: 50px; padding: 13px; font-size: 14px; font-weight: 700; font-family: var(--font); cursor: pointer; box-shadow: 0 4px 12px rgba(56,173,108,0.3); transition: opacity 0.2s; }
+
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
+
+/* ── Login screen ── */
+#login-screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--bg); z-index: 999; gap: 20px; padding: 32px; }
+.login-logo { display: flex; align-items: center; gap: 10px; }
+.login-logo-icon { width: 52px; height: 52px; background: linear-gradient(135deg, var(--g-from) 0%, var(--g-to) 100%); border-radius: 16px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(56,173,108,0.35); }
+.login-title { font-size: 26px; font-weight: 700; color: var(--text); }
+.login-sub { font-size: 13px; color: var(--text-sub); text-align: center; max-width: 280px; line-height: 1.7; }
+.login-btn { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 50px; padding: 13px 28px; font-size: 15px; font-weight: 600; font-family: var(--font); cursor: pointer; box-shadow: var(--shadow); transition: box-shadow 0.2s, transform 0.1s; color: var(--text); }
+.login-btn:hover { box-shadow: 0 4px 18px rgba(0,0,0,0.13); transform: translateY(-1px); }
+.login-btn:active { transform: scale(0.97); }
+.user-avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255,255,255,0.75); cursor: pointer; }
+.user-avatar-placeholder { width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,0.28); border: 2px solid rgba(255,255,255,0.75); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; cursor: pointer; }
+.logout-row { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+.logout-btn { width: 100%; background: none; border: 1px solid #E0B0B0; color: #C04040; border-radius: 8px; padding: 10px; font-size: 13px; font-family: var(--font); cursor: pointer; transition: background 0.15s; }
+.logout-btn:hover { background: #FEF0F0; }
+</style>
+</head>
+<body>
+
+<!-- Login screen -->
+<div id="login-screen">
+  <div class="login-logo">
+    <div class="login-logo-icon" id="login-logo-icon"></div>
+  </div>
+  <div class="login-title">目標チェック</div>
+  <div class="login-sub">Googleアカウントでログインすると、PC・スマホどちらからでもデータが同期されます。</div>
+  <button class="login-btn" id="login-btn">
+    <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+    Googleでログイン
+  </button>
+</div>
+
+<div id="app" style="display:none">
+  <header class="header">
+    <span class="header-title"><span id="header-sprout-icon" style="display:inline-flex;align-items:center"></span>目標チェック</span>
+    <div class="header-right">
+      <span id="header-user"></span>
+      <button class="settings-btn" id="settings-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-page="calendar">カレンダー</button>
+    <button class="tab-btn" data-page="annual">年間</button>
+    <button class="tab-btn" data-page="body">体組成</button>
+  </nav>
+
+  <div id="page-calendar" class="page active"></div>
+  <div id="page-annual" class="page"></div>
+  <div id="page-body" class="page"></div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal" id="modal-body"></div>
+</div>
+
+<script type="module">
+'use strict';
+
+// ── Firebase SDK ──
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { getFirestore, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDx5MFk_Uhdg3skO1rGszAdS-1OY26hyv4",
+  authDomain: "goal-tracker2026.firebaseapp.com",
+  projectId: "goal-tracker2026",
+  storageBucket: "goal-tracker2026.firebasestorage.app",
+  messagingSenderId: "801874344138",
+  appId: "1:801874344138:web:2f6d45d8728ae96cc8dc33"
+};
+const fbApp = initializeApp(firebaseConfig);
+const auth = getAuth(fbApp);
+const db = getFirestore(fbApp);
+const gProvider = new GoogleAuthProvider();
+let currentUser = null;
+
+// ── Hugeicons from esm.sh ──
+const {
+  BookOpen01Icon, LaptopIcon, WorkoutRunIcon,
+  Home01Icon, PencilEdit01Icon, Briefcase01Icon,
+  SmileIcon, SunriseIcon, Sprout
+} = await import('https://esm.sh/@hugeicons/core-free-icons@4.1.1');
+
+const COLORS = {
+  moss:  { primary: '#3CB06A', light: '#E4F7EC', mid: '#80D4A0', accent: '#228A4C' },
+  coral: { primary: '#E07060', light: '#FFF0EE', mid: '#F0A898', accent: '#C05040' },
+  sky:   { primary: '#4AA8D8', light: '#E2F3FA', mid: '#80C8E8', accent: '#2880B0' },
+  plum:  { primary: '#A870C0', light: '#F5EEFA', mid: '#CCA0DC', accent: '#8050A0' },
+  amber: { primary: '#D4A020', light: '#FDF4D8', mid: '#EAC850', accent: '#A87800' },
+  slate: { primary: '#5898C0', light: '#E4EFF8', mid: '#88B8D8', accent: '#3870A0' },
+};
+
+// ── Hugeicons icon data (imported above) ──
+const ICONS = {
+  book:      BookOpen01Icon,
+  laptop:    LaptopIcon,
+  run:       WorkoutRunIcon,
+  home:      Home01Icon,
+  pen:       PencilEdit01Icon,
+  briefcase: Briefcase01Icon,
+  smile:     SmileIcon,
+  sunrise:   SunriseIcon,
+  plant:     Sprout,        // header seedling icon
+};
+const ICON_KEYS = ['book','laptop','run','home','pen','briefcase','smile','sunrise'];
+
+// SVG symbols for check states (equal stroke weight)
+const SYM_OK = `<svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="7.5" cy="7.5" r="5.5"/></svg>`;
+const SYM_NG = `<svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="3" x2="12" y2="12"/><line x1="12" y1="3" x2="3" y2="12"/></svg>`;
+
+const FREQ_LABELS = { daily: '毎日', weekdays: '平日のみ', weekends: '土日のみ', monthly: '月1回' };
+const DOW = ['日','月','火','水','木','金','土'];
+const TODAY = new Date();
+
+let S = {
+  tab: 'calendar',
+  year: TODAY.getFullYear(), month: TODAY.getMonth() + 1,
+  annualYear: TODAY.getFullYear(),
+  goals: [], checks: {}, memos: {}, monthMemos: {},
+  yearGoals: {}, yearMemos: {}, bodyData: {},
+  newIcon: 'book', newColor: 'moss',
+  openMemoDay: null,
+};
+
+const DEFAULT_GOALS = [
+  { id: 'g1', name: '早起き',  icon: 'sunrise',    color: 'moss',  frequency: 'weekdays' },
+  { id: 'g2', name: '運動',    icon: 'run',        color: 'coral', frequency: 'daily'    },
+  { id: 'g3', name: '読書',    icon: 'book',       color: 'sky',   frequency: 'daily'    },
+  { id: 'g4', name: '副業',    icon: 'briefcase',  color: 'plum',  frequency: 'weekdays' },
+];
+
+async function save() {
+  if (!currentUser) return;
+  await setDoc(doc(db, 'users', currentUser.uid), {
+    goals: S.goals, checks: S.checks, memos: S.memos,
+    monthMemos: S.monthMemos, yearGoals: S.yearGoals,
+    yearMemos: S.yearMemos, bodyData: S.bodyData
+  });
+}
+
+async function loadFromFirestore() {
+  if (!currentUser) return;
+  try {
+    const snap = await getDoc(doc(db, 'users', currentUser.uid));
+    if (snap.exists()) Object.assign(S, snap.data());
+  } catch(e) {}
+  if (!S.goals?.length) S.goals = JSON.parse(JSON.stringify(DEFAULT_GOALS));
+}
+
+async function login() {
+  try { await signInWithPopup(auth, gProvider); }
+  catch(e) { if (e.code !== 'auth/popup-closed-by-user') alert('ログインに失敗しました: ' + e.message); }
+}
+
+async function logout() {
+  if (!confirm('ログアウトしますか？')) return;
+  await signOut(auth);
+}
+
+function pad(n) { return String(n).padStart(2, '0'); }
+function daysInMonth(y, m) { return new Date(y, m, 0).getDate(); }
+function dow(y, m, d) { return new Date(y, m - 1, d).getDay(); }
+
+function isActive(goal, y, m, d) {
+  const w = dow(y, m, d);
+  if (goal.frequency === 'daily') return true;
+  if (goal.frequency === 'weekdays') return w >= 1 && w <= 5;
+  if (goal.frequency === 'weekends') return w === 0 || w === 6;
+  if (goal.frequency === 'monthly') return d === 1;
+  return false;
+}
+
+function ckKey(y, m, d, gid) { return `${y}-${pad(m)}/${pad(d)}-${gid}`; }
+function getCheck(y, m, d, gid) { return S.checks[ckKey(y, m, d, gid)] || ''; }
+function setCheck(y, m, d, gid, v) { S.checks[ckKey(y, m, d, gid)] = v; save(); }
+function getMemo(y, m, d) { return S.memos[`${y}-${pad(m)}/${pad(d)}`] || ''; }
+function setMemo(y, m, d, v) { S.memos[`${y}-${pad(m)}/${pad(d)}`] = v; save(); }
+
+// Render memo text: replaces [目標名] tags with goal icons
+function renderMemoText(text) {
+  if (!text || !S.goals.length) return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br>');
+  const escaped = S.goals.map(g => g.name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'));
+  const regex = new RegExp(`(\\[(?:${escaped.join('|')})\\])`, 'g');
+  return text.split(regex).map(part => {
+    const g = S.goals.find(x => `[${x.name}]` === part);
+    if (g) {
+      const c = COLORS[g.color];
+      return `<span style="display:inline-flex;align-items:center;vertical-align:middle;margin:0 1px">${ico(g.icon, 13, c.primary)}</span>`;
+    }
+    return part.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br>');
+  }).join('');
+}
+
+function calcAch(y, m, gid) {
+  const g = S.goals.find(x => x.id === gid); if (!g) return null;
+  const days = daysInMonth(y, m); let done = 0, total = 0;
+  for (let d = 1; d <= days; d++) {
+    if (y === TODAY.getFullYear() && m === TODAY.getMonth()+1 && d > TODAY.getDate()) continue;
+    const ck = getCheck(y, m, d, gid);
+    const active = isActive(g, y, m, d);
+    const achieved = ck === '◎' || ck === '◯';
+    // Count day if it's an active day OR if it has been manually checked on an inactive day
+    if (active || achieved) {
+      total++;
+      if (achieved) done++;
+    }
+  }
+  return total === 0 ? null : Math.round(done / total * 100);
+}
+
+function calcStreak(gid) {
+  const g = S.goals.find(x => x.id === gid); if (!g) return 0;
+  let streak = 0, cur = new Date(TODAY.getFullYear(), TODAY.getMonth(), TODAY.getDate());
+  for (let i = 0; i < 400; i++) {
+    const y = cur.getFullYear(), m = cur.getMonth()+1, d = cur.getDate();
+    if (!isActive(g, y, m, d)) { cur.setDate(cur.getDate()-1); continue; }
+    const ck = getCheck(y, m, d, gid);
+    if (ck === '◎' || ck === '◯') { streak++; cur.setDate(cur.getDate()-1); } else break;
+  }
+  return streak;
+}
+
+// Convert Hugeicons [tag, camelCaseAttrs][] to SVG HTML string
+function ico(name, size, color) {
+  const iconData = ICONS[name];
+  const sz = size || 20;
+  const c = color || 'currentColor';
+  if (!Array.isArray(iconData)) return `<svg width="${sz}" height="${sz}" viewBox="0 0 24 24"></svg>`;
+  const paths = iconData.map(([tag, attrs]) => {
+    const attrStr = Object.entries(attrs).map(([k, v]) => {
+      const key = k.replace(/([A-Z])/g, m => '-' + m.toLowerCase());
+      const val = v === 'currentColor' ? c : v;
+      return `${key}="${val}"`;
+    }).join(' ');
+    return `<${tag} ${attrStr}/>`;
+  }).join('');
+  return `<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none">${paths}</svg>`;
+}
+
+function ring(pct, primary, size) {
+  size = size||72; const cx = size/2, r = cx-7, circ = 2*Math.PI*r;
+  const off = pct===null ? circ : circ*(1-pct/100);
+  const txt = pct===null ? '−' : pct+'%';
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    <circle cx="${cx}" cy="${cx}" r="${r}" fill="none" stroke="var(--border)" stroke-width="5"/>
+    <circle cx="${cx}" cy="${cx}" r="${r}" fill="none" stroke="${primary}" stroke-width="5" stroke-linecap="round"
+      stroke-dasharray="${circ.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}"
+      transform="rotate(-90 ${cx} ${cx})" style="transition:stroke-dashoffset 0.7s ease"/>
+    <text x="${cx}" y="${cx+1}" text-anchor="middle" dominant-baseline="middle"
+      font-family="'Noto Sans JP',sans-serif" font-size="${pct===null?12:15}" font-weight="700" fill="var(--text)">${txt}</text>
+  </svg>`;
+}
+
+function updateCheckBtn(y, m, d, gid) {
+  const btn = document.querySelector(`.check-btn[data-y="${y}"][data-m="${m}"][data-d="${d}"][data-gid="${gid}"]`);
+  if (!btn) return;
+  const g = S.goals.find(x => x.id === gid);
+  const c = g ? COLORS[g.color] : null;
+  const ck = getCheck(y, m, d, gid);
+  const active = g ? isActive(g, y, m, d) : true;
+  btn.innerHTML = ck === '◯' ? SYM_OK : ck === '×' ? SYM_NG : `<span style="font-size:12px">${active ? '' : '−'}</span>`;
+  btn.style.color = (ck === '◯' || ck === '×') ? (c ? c.primary : 'var(--accent)') : 'var(--text-sub)';
+}
+
+// ── Navigate ──
+function navigate(tab) {
+  S.tab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.page === tab));
+  document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-' + tab));
+  if (tab === 'calendar') renderCalendar();
+  if (tab === 'annual') renderAnnual();
+  if (tab === 'body') renderBody();
+}
+
+// ── Text block helper (view/edit toggle) ──
+function setupTextBlock(id, placeholder, onSave) {
+  const view   = document.getElementById(id + '-view');
+  const editor = document.getElementById(id + '-editor');
+  const editBtn = document.getElementById(id + '-edit-btn');
+  if (!view || !editor) return;
+
+  function openEdit() {
+    view.style.display = 'none';
+    if (editBtn) editBtn.style.display = 'none';
+    editor.classList.add('open');
+    const ta = editor.querySelector('textarea');
+    if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
+  }
+  function closeEdit(val) {
+    view.style.display = '';
+    if (editBtn) editBtn.style.display = '';
+    editor.classList.remove('open');
+    if (val !== undefined) {
+      view.innerHTML = val
+        ? `<div class="text-content">${val.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>`
+        : `<div class="text-empty">${placeholder}</div>`;
+    }
+  }
+
+  view.addEventListener('click', openEdit);
+  if (editBtn) editBtn.addEventListener('click', openEdit);
+  editor.querySelector('.btn-cancel-sm').addEventListener('click', () => closeEdit());
+  editor.querySelector('.btn-save').addEventListener('click', () => {
+    const val = editor.querySelector('textarea').value;
+    onSave(val);
+    closeEdit(val);
+  });
+}
+
+// ── Calendar ──
+function renderCalendar() {
+  const el = document.getElementById('page-calendar');
+  el.innerHTML = buildCalHTML();
+  bindCalEvents();
+}
+
+function buildCalHTML() {
+  const y = S.year, m = S.month, days = daysInMonth(y, m);
+  const goals = S.goals;
+
+  // Rings
+  const ringsHTML = goals.map(g => {
+    const c = COLORS[g.color], pct = calcAch(y, m, g.id), str = calcStreak(g.id);
+    const flameSvg = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c0 6-6 8-6 13a6 6 0 0 0 12 0c0-5-6-7-6-13z"/><path d="M12 12c0 3-2 4-2 6a2 2 0 0 0 4 0c0-2-2-3-2-6z"/></svg>`;
+    const badge = str >= 2 ? `<div class="streak-badge">${flameSvg} ${str}</div>` : '';
+    return `<div class="ring-item">
+      <div class="ring-wrapper">${ring(pct, c.primary, 84)}${badge}</div>
+      <div class="ring-name">${ico(g.icon, 14, c.primary)}<span>${g.name}</span></div>
+    </div>`;
+  }).join('');
+
+  // Table header
+  const thGoals = goals.map(g => {
+    const c = COLORS[g.color];
+    return `<th><div class="th-icon">${ico(g.icon,20,c.primary)}<span style="font-size:11px;color:${c.primary};font-weight:600">${g.name}</span></div></th>`;
+  }).join('');
+
+  // Table body
+  let rows = '';
+  for (let d = 1; d <= days; d++) {
+    const w = dow(y, m, d);
+    const isSun = w === 0, isSat = w === 6, isWknd = isSun || isSat;
+    const isToday = y === TODAY.getFullYear() && m === TODAY.getMonth()+1 && d === TODAY.getDate();
+    const memo = getMemo(y, m, d);
+    const memoOpen = S.openMemoDay === d;
+
+    let rowCls = 'cal-day-row';
+    if (isWknd) rowCls += ' wknd';
+    if (isToday) rowCls += ' today';
+    let dateCls = 'date-cell';
+    if (isSun) dateCls += ' is-sun';
+    if (isSat) dateCls += ' is-sat';
+
+    const numHTML = isToday
+      ? `<span class="today-circle">${d}</span>`
+      : `<span class="date-num">${d}</span>`;
+
+    const checks = goals.map(g => {
+      const c = COLORS[g.color];
+      const active = isActive(g, y, m, d);
+      const ck = getCheck(y, m, d, g.id);
+      const displayHTML = ck === '◯' ? SYM_OK : ck === '×' ? SYM_NG : `<span style="font-size:12px">${active ? '' : '−'}</span>`;
+      const color = (ck === '◯' || ck === '×') ? c.primary : 'var(--text-sub)';
+      return `<td class="check-cell">
+        <button class="check-btn" data-y="${y}" data-m="${m}" data-d="${d}" data-gid="${g.id}"
+          style="color:${color}">${displayHTML}</button>
+      </td>`;
+    }).join('');
+
+    const memoCell = memo
+      ? `<span class="memo-preview-text" data-day="${d}">${renderMemoText(memo)}</span>`
+      : `<span class="memo-add-btn" data-day="${d}">＋</span>`;
+
+    const colCount = goals.length + 2;
+
+    rows += `<tr class="${rowCls}">
+      <td class="${dateCls}">${numHTML}<div class="date-dow">${DOW[w]}</div></td>
+      ${checks}
+      <td class="memo-cell">${memoCell}</td>
+    </tr>
+    <tr class="memo-edit-row${memoOpen?' open':''}" id="medit-${d}">
+      <td colspan="${colCount}">
+        <div class="memo-edit-inner">
+          <div class="memo-goal-tags">${goals.map(g => {
+            const c = COLORS[g.color];
+            return `<button class="memo-tag-btn" style="background:${c.light};color:${c.accent}" data-insert="${g.name}" data-day="${d}">${g.name}</button>`;
+          }).join('')}</div>
+          <textarea class="memo-textarea" data-y="${y}" data-m="${m}" data-d="${d}" placeholder="メモを入力...">${memo}</textarea>
+          <div class="memo-actions">
+            <button class="memo-cancel-btn" data-day="${d}">キャンセル</button>
+            <button class="memo-save-btn" data-y="${y}" data-m="${m}" data-day="${d}">保存</button>
+          </div>
+        </div>
+      </td>
+    </tr>`;
+  }
+
+  const monthMemo = S.monthMemos[`${y}-${pad(m)}`] || '';
+
+  return `
+    <div class="card">
+      <div class="card-header">
+        <div class="month-nav-row" style="width:100%;padding:0">
+          <button class="nav-arrow-btn" id="prev-m">&#8249;</button>
+          <span class="month-heading">${y}年 ${m}月</span>
+          <button class="nav-arrow-btn" id="next-m">&#8250;</button>
+        </div>
+      </div>
+      <div class="rings-row">${ringsHTML || '<span style="color:var(--text-sub);font-size:13px;padding:16px">目標を追加してください</span>'}</div>
+    </div>
+    <div class="card" style="padding:0">
+      <div class="table-wrap">
+        <table class="cal-table">
+          <thead><tr>
+            <th style="text-align:left;padding-left:12px">日付</th>
+            ${thGoals}
+            <th class="th-memo">メモ</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>
+    <div class="section-block">
+      <div class="section-row">
+        <span class="section-label">月のまとめ</span>
+        <button class="edit-link" id="month-memo-edit-btn">編集</button>
+      </div>
+      <div class="text-block-view" id="month-memo-view">
+        ${monthMemo ? `<div class="text-content">${monthMemo.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>` : '<div class="text-empty">タップして追加...</div>'}
+      </div>
+      <div class="text-block-edit" id="month-memo-editor">
+        <textarea class="big-textarea" id="month-memo-ta" placeholder="この月の振り返りや感想...">${monthMemo}</textarea>
+        <div class="edit-actions">
+          <button class="btn-cancel-sm" id="month-memo-cancel">キャンセル</button>
+          <button class="btn-save" id="month-memo-save">保存</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function bindCalEvents() {
+  document.getElementById('prev-m').onclick = () => { S.month--; if (S.month<1){S.month=12;S.year--;} S.openMemoDay=null; renderCalendar(); };
+  document.getElementById('next-m').onclick = () => { S.month++; if (S.month>12){S.month=1;S.year++;} S.openMemoDay=null; renderCalendar(); };
+
+  // Check buttons — click cycles: '' → '◯' → '×' → ''
+  document.querySelectorAll('.check-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const y = +btn.dataset.y, m = +btn.dataset.m, d = +btn.dataset.d, gid = btn.dataset.gid;
+      const ck = getCheck(y, m, d, gid);
+      const next = ck === '' ? '◯' : ck === '◯' ? '×' : '';
+      setCheck(y, m, d, gid, next);
+      updateCheckBtn(y, m, d, gid);
+      refreshRings();
+    });
+  });
+
+  // Memo open (click preview text or + btn)
+  document.querySelectorAll('.memo-preview-text, .memo-add-btn').forEach(el => {
+    el.addEventListener('click', () => {
+      const d = +el.dataset.day;
+      S.openMemoDay = S.openMemoDay === d ? null : d;
+      renderCalendar();
+      if (S.openMemoDay) {
+        setTimeout(() => {
+          const ta = document.querySelector(`#medit-${d} .memo-textarea`);
+          if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
+        }, 50);
+      }
+    });
+  });
+
+  // Memo tag insert
+  document.querySelectorAll('.memo-tag-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const d = btn.dataset.day;
+      const ta = document.querySelector(`#medit-${d} .memo-textarea`);
+      if (!ta) return;
+      const ins = `[${btn.dataset.insert}] `;
+      const pos = ta.selectionStart;
+      ta.value = ta.value.slice(0, pos) + ins + ta.value.slice(pos);
+      ta.selectionStart = ta.selectionEnd = pos + ins.length;
+      ta.focus();
+    });
+  });
+
+  // Memo save
+  document.querySelectorAll('.memo-save-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const d = +btn.dataset.day;
+      const ta = document.querySelector(`#medit-${d} .memo-textarea`);
+      if (!ta) return;
+      setMemo(+btn.dataset.y, +btn.dataset.m, d, ta.value);
+      S.openMemoDay = null;
+      renderCalendar();
+    });
+  });
+
+  // Memo cancel
+  document.querySelectorAll('.memo-cancel-btn').forEach(btn => {
+    btn.addEventListener('click', () => { S.openMemoDay = null; renderCalendar(); });
+  });
+
+  // Month memo
+  setupTextBlock('month-memo', 'この月の振り返りや感想...', val => {
+    S.monthMemos[`${S.year}-${pad(S.month)}`] = val; save();
+  });
+}
+
+function refreshRings() {
+  const items = document.querySelectorAll('.ring-item');
+  items.forEach((item, i) => {
+    const g = S.goals[i]; if (!g) return;
+    const c = COLORS[g.color], pct = calcAch(S.year, S.month, g.id), str = calcStreak(g.id);
+    const flameSvg2 = `<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c0 6-6 8-6 13a6 6 0 0 0 12 0c0-5-6-7-6-13z"/></svg>`;
+    const badge = str >= 2 ? `<div class="streak-badge">${flameSvg2} ${str}</div>` : '';
+    const wrap = item.querySelector('.ring-wrapper');
+    wrap.innerHTML = ring(pct, c.primary, 84) + badge;
+  });
+}
+
+// ── Annual ──
+function renderAnnual() {
+  const el = document.getElementById('page-annual');
+  const y = S.annualYear;
+  const goals = S.goals;
+
+  const mos = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  const thMos = mos.map(mo => `<th>${mo}</th>`).join('');
+
+  const rows = goals.map(g => {
+    const c = COLORS[g.color];
+    let cells = ''; let yD = 0, yT = 0;
+    for (let mo = 1; mo <= 12; mo++) {
+      const pct = calcAch(y, mo, g.id);
+      if (pct === null) { cells += `<td><span class="chip-em">−</span></td>`; continue; }
+      const cls = pct >= 80 ? 'chip-hi' : pct >= 50 ? 'chip-mi' : 'chip-lo';
+      cells += `<td><span class="chip ${cls}">${pct}%</span></td>`;
+      const dd = daysInMonth(y, mo);
+      for (let d = 1; d <= dd; d++) {
+        if (!isActive(g, y, mo, d)) continue;
+        if (y === TODAY.getFullYear() && mo === TODAY.getMonth()+1 && d > TODAY.getDate()) continue;
+        yT++;
+        const ck = getCheck(y, mo, d, g.id);
+        if (ck === '◎' || ck === '◯') yD++;
+      }
+    }
+    const yPct = yT > 0 ? Math.round(yD/yT*100) : null;
+    const yCls = yPct === null ? '' : yPct >= 80 ? 'chip chip-hi' : yPct >= 50 ? 'chip chip-mi' : 'chip chip-lo';
+    const yCell = yPct === null ? `<span class="chip-em">−</span>` : `<span class="${yCls}">${yPct}%</span>`;
+    return `<tr><td>${ico(g.icon,14,c.primary)} <span style="color:${c.primary}">${g.name}</span></td>${cells}<td>${yCell}</td></tr>`;
+  }).join('') || `<tr><td colspan="14" class="empty-msg">目標がありません</td></tr>`;
+
+  el.innerHTML = `
+    <div class="year-nav-row">
+      <button class="nav-arrow-btn" id="prev-y">&#8249;</button>
+      <span class="year-heading">${y}年</span>
+      <button class="nav-arrow-btn" id="next-y">&#8250;</button>
+    </div>
+    <div class="section-block mb16">
+      <div class="section-row">
+        <span class="section-label">年間目標</span>
+        <button class="edit-link" id="year-goal-edit-btn">編集</button>
+      </div>
+      <div class="text-block-view" id="year-goal-view">
+        ${S.yearGoals[y] ? `<div class="text-content">${(S.yearGoals[y]||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>` : '<div class="text-empty">タップして追加...</div>'}
+      </div>
+      <div class="text-block-edit" id="year-goal-editor">
+        <textarea class="big-textarea" id="year-goal-ta" placeholder="今年の目標...">${S.yearGoals[y]||''}</textarea>
+        <div class="edit-actions">
+          <button class="btn-cancel-sm">キャンセル</button>
+          <button class="btn-save">保存</button>
+        </div>
+      </div>
+    </div>
+    <div class="annual-wrap">
+      <table class="annual-table">
+        <thead><tr><th>目標</th>${thMos}<th>年間</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    ${buildMonthReviewHTML(y)}
+    <div class="section-block">
+      <div class="section-row">
+        <span class="section-label">年間メモ</span>
+        <button class="edit-link" id="year-memo-edit-btn">編集</button>
+      </div>
+      <div class="text-block-view" id="year-memo-view">
+        ${S.yearMemos[y] ? `<div class="text-content">${(S.yearMemos[y]||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>` : '<div class="text-empty">タップして追加...</div>'}
+      </div>
+      <div class="text-block-edit" id="year-memo-editor">
+        <textarea class="big-textarea" id="year-memo-ta" placeholder="今年の振り返り...">${S.yearMemos[y]||''}</textarea>
+        <div class="edit-actions">
+          <button class="btn-cancel-sm">キャンセル</button>
+          <button class="btn-save">保存</button>
+        </div>
+      </div>
+    </div>`;
+
+  document.getElementById('prev-y').onclick = () => { S.annualYear--; renderAnnual(); };
+  document.getElementById('next-y').onclick = () => { S.annualYear++; renderAnnual(); };
+
+  setupTextBlock('year-goal', '今年の目標...', val => { S.yearGoals[y] = val; save(); });
+  setupTextBlock('year-memo', '今年の振り返り...', val => { S.yearMemos[y] = val; save(); });
+}
+
+function buildMonthReviewHTML(y) {
+  const mos = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  const items = mos.map((label, i) => {
+    const memo = S.monthMemos[`${y}-${pad(i + 1)}`] || '';
+    if (!memo) return '';
+    return `<div class="month-review-item">
+      <div class="month-review-label">${label}</div>
+      <div class="month-review-body">${memo.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>
+    </div>`;
+  }).join('');
+  return `<div class="section-block">
+    <span class="section-label">月ごとの振り返り</span>
+    ${items || '<div class="text-empty">まだ月の振り返りがありません</div>'}
+  </div>`;
+}
+
+// ── Body ──
+function renderBody() {
+  const el = document.getElementById('page-body');
+  const allData = Object.entries(S.bodyData).sort((a,b) => a[0].localeCompare(b[0])).map(([k,v]) => ({key:k,...v}));
+  const last12 = allData.slice(-12);
+  const maxW = Math.max(...last12.map(r => r.weight||0), 1);
+  const maxF = Math.max(...last12.map(r => r.fat||0), 1);
+
+  const wBars = last12.map(r => {
+    const h = r.weight ? Math.round((r.weight/maxW)*80) : 3;
+    return `<div class="bar-group"><div class="bar-rect" style="height:${h}px;background:var(--accent)"><span class="bar-val">${r.weight||''}</span></div><span class="bar-lbl">${r.key.slice(5)}月</span></div>`;
+  }).join('');
+  const fBars = last12.map(r => {
+    const h = r.fat ? Math.round((r.fat/maxF)*80) : 3;
+    return `<div class="bar-group"><div class="bar-rect" style="height:${h}px;background:#C4735A"><span class="bar-val">${r.fat||''}</span></div><span class="bar-lbl">${r.key.slice(5)}月</span></div>`;
+  }).join('');
+
+  const tableRows = [...allData].reverse().map(r => `<tr>
+    <td>${r.key.replace('-','年').replace(/-(\d+)$/,(_,m)=>m+'月')}</td>
+    <td>${r.weight??'−'}</td><td>${r.fat??'−'}</td><td>${r.age??'−'}</td>
+    <td><button class="del-btn" data-key="${r.key}">削除</button></td>
+  </tr>`).join('');
+
+  const curY = TODAY.getFullYear(), curM = TODAY.getMonth()+1;
+  let yOpts = '', mOpts = '';
+  for (let i = curY-3; i <= curY+1; i++) yOpts += `<option value="${i}"${i===curY?' selected':''}>${i}年</option>`;
+  for (let i = 1; i <= 12; i++) mOpts += `<option value="${pad(i)}"${i===curM?' selected':''}>${i}月</option>`;
+
+  el.innerHTML = `
+    <div class="body-form-card">
+      <div class="form-grid">
+        <div class="form-group"><label class="form-label">年</label><select class="form-sel" id="by">${yOpts}</select></div>
+        <div class="form-group"><label class="form-label">月</label><select class="form-sel" id="bm">${mOpts}</select></div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group"><label class="form-label">体重 (kg)</label><input class="form-input" id="bw" type="number" step="0.1" placeholder="65.0"></div>
+        <div class="form-group"><label class="form-label">体脂肪率 (%)</label><input class="form-input" id="bf" type="number" step="0.1" placeholder="20.0"></div>
+        <div class="form-group"><label class="form-label">体内年齢</label><input class="form-input" id="ba" type="number" placeholder="30"></div>
+      </div>
+      <button class="submit-btn" id="body-save">記録する</button>
+    </div>
+    ${last12.length ? `
+    <div class="chart-card"><div class="chart-label">体重推移 (kg)</div><div class="bar-chart">${wBars}</div></div>
+    <div class="chart-card"><div class="chart-label">体脂肪率推移 (%)</div><div class="bar-chart">${fBars}</div></div>` : ''}
+    <div class="data-card">
+      <table class="data-table">
+        <thead><tr><th>年月</th><th>体重</th><th>体脂肪率</th><th>体内年齢</th><th></th></tr></thead>
+        <tbody>${tableRows||`<tr><td colspan="5" class="empty-msg">まだデータがありません</td></tr>`}</tbody>
+      </table>
+    </div>`;
+
+  document.getElementById('body-save').onclick = () => {
+    const y = document.getElementById('by').value, m = document.getElementById('bm').value;
+    const weight = parseFloat(document.getElementById('bw').value)||null;
+    const fat    = parseFloat(document.getElementById('bf').value)||null;
+    const age    = parseInt(document.getElementById('ba').value)||null;
+    S.bodyData[`${y}-${m}`] = { weight, fat, age };
+    save(); renderBody();
+  };
+  document.querySelectorAll('.del-btn').forEach(btn => {
+    btn.onclick = () => { if (confirm('削除しますか？')) { delete S.bodyData[btn.dataset.key]; save(); renderBody(); } };
+  });
+}
+
+// ── Settings ──
+function openSettings() { document.getElementById('overlay').classList.add('open'); renderSettings(); }
+function closeSettings() { document.getElementById('overlay').classList.remove('open'); }
+
+function renderSettings() {
+  const modal = document.getElementById('modal-body');
+  const goalRows = S.goals.map(g => {
+    const c = COLORS[g.color];
+    return `<div class="goal-row">
+      <div class="goal-icon-box" style="background:${c.light}">${ico(g.icon,24,c.primary)}</div>
+      <div class="goal-info"><div class="goal-name">${g.name}</div><div class="goal-freq">${FREQ_LABELS[g.frequency]}</div></div>
+      <button class="goal-del" data-id="${g.id}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+      </button>
+    </div>`;
+  }).join('') || `<div class="empty-msg">目標がありません</div>`;
+
+  const iconOpts = ICON_KEYS.map(name => {
+    const sel = S.newIcon === name;
+    return `<div class="icon-opt${sel?' sel':''}" data-icon="${name}">${ico(name,20,sel?'var(--accent)':'var(--text-sub)')}</div>`;
+  }).join('');
+
+  const colorOpts = Object.keys(COLORS).map(name => {
+    return `<div class="color-dot${S.newColor===name?' sel':''}" data-color="${name}" style="background:${COLORS[name].primary}"></div>`;
+  }).join('');
+
+  const userInfo = currentUser
+    ? `<div style="display:flex;align-items:center;gap:10px;padding:10px 0 16px;border-bottom:1px solid var(--border);margin-bottom:4px">
+        ${currentUser.photoURL ? `<img style="width:36px;height:36px;border-radius:50%;object-fit:cover" src="${currentUser.photoURL}">` : `<div style="width:36px;height:36px;border-radius:50%;background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--accent)">${(currentUser.displayName||'U')[0]}</div>`}
+        <div style="flex:1"><div style="font-size:13px;font-weight:600">${currentUser.displayName||''}</div><div style="font-size:11px;color:var(--text-sub)">${currentUser.email||''}</div></div>
+      </div>` : '';
+
+  modal.innerHTML = `
+    <div class="modal-bar"></div>
+    <div class="modal-h">設定</div>
+    ${userInfo}
+    <div>${goalRows}</div>
+    <div class="add-section">
+      <div class="add-h">目標を追加</div>
+      <span class="field-lbl">目標名</span>
+      <input class="text-input" id="new-name" type="text" placeholder="例：瞑想">
+      <span class="field-lbl">アイコン</span>
+      <div class="icon-grid" id="icon-grid">${iconOpts}</div>
+      <span class="field-lbl">カラー</span>
+      <div class="color-row">${colorOpts}</div>
+      <span class="field-lbl">頻度</span>
+      <select class="freq-sel" id="new-freq">
+        <option value="daily">毎日</option>
+        <option value="weekdays">平日のみ</option>
+        <option value="weekends">土日のみ</option>
+        <option value="monthly">月1回</option>
+      </select>
+      <button class="add-goal-btn" id="add-goal">追加する</button>
+    </div>
+    <div class="logout-row">
+      <button class="logout-btn" id="logout-btn">ログアウト</button>
+    </div>`;
+
+  modal.querySelectorAll('.goal-del').forEach(btn => {
+    btn.onclick = () => {
+      if (!confirm('この目標を削除しますか？')) return;
+      S.goals = S.goals.filter(g => g.id !== btn.dataset.id);
+      save(); renderSettings();
+      if (S.tab === 'calendar') renderCalendar();
+    };
+  });
+
+  modal.querySelectorAll('.icon-opt').forEach(opt => {
+    opt.onclick = () => {
+      S.newIcon = opt.dataset.icon;
+      modal.querySelectorAll('.icon-opt').forEach(o => {
+        const s = o.dataset.icon === S.newIcon;
+        o.classList.toggle('sel', s);
+        o.innerHTML = ico(o.dataset.icon, 20, s ? 'var(--accent)' : 'var(--text-sub)');
+      });
+    };
+  });
+
+  modal.querySelectorAll('.color-dot').forEach(dot => {
+    dot.onclick = () => {
+      S.newColor = dot.dataset.color;
+      modal.querySelectorAll('.color-dot').forEach(d => d.classList.toggle('sel', d.dataset.color === S.newColor));
+    };
+  });
+
+  modal.querySelector('#add-goal').onclick = () => {
+    const name = modal.querySelector('#new-name').value.trim();
+    if (!name) { alert('目標名を入力してください'); return; }
+    const freq = modal.querySelector('#new-freq').value;
+    S.goals.push({ id: 'g'+Date.now(), name, icon: S.newIcon, color: S.newColor, frequency: freq });
+    save(); modal.querySelector('#new-name').value = '';
+    renderSettings();
+    if (S.tab === 'calendar') renderCalendar();
+  };
+
+  modal.querySelector('#logout-btn').onclick = () => { closeSettings(); logout(); };
+
+}
+
+// ── Init ──
+document.querySelector('.tabs').addEventListener('click', e => {
+  const btn = e.target.closest('[data-page]');
+  if (btn) navigate(btn.dataset.page);
+});
+document.getElementById('settings-btn').onclick = openSettings;
+document.getElementById('overlay').addEventListener('click', e => {
+  if (e.target.id === 'overlay') closeSettings();
+});
+document.getElementById('login-btn').onclick = login;
+
+// Set login screen logo icon (rendered after ico() is defined, via init below)
+const loginLogoEl = document.getElementById('login-logo-icon');
+if (loginLogoEl) loginLogoEl.innerHTML = ico('plant', 28, 'rgba(255,255,255,0.95)');
+
+// Set header sprout icon
+const headerSprout = document.getElementById('header-sprout-icon');
+if (headerSprout) headerSprout.innerHTML = ico('plant', 20, 'rgba(255,255,255,0.95)');
+
+onAuthStateChanged(auth, async user => {
+  currentUser = user;
+  if (user) {
+    // Show app, hide login
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = '';
+    // Show user avatar in header
+    const headerUser = document.getElementById('header-user');
+    if (headerUser) {
+      if (user.photoURL) {
+        headerUser.innerHTML = `<img class="user-avatar" src="${user.photoURL}" alt="${user.displayName||''}" title="ログアウト">`;
+      } else {
+        const letter = (user.displayName||'U')[0].toUpperCase();
+        headerUser.innerHTML = `<div class="user-avatar-placeholder" title="ログアウト">${letter}</div>`;
+      }
+      headerUser.querySelector('.user-avatar, .user-avatar-placeholder').addEventListener('click', logout);
+    }
+    // Load data and render
+    await loadFromFirestore();
+    renderCalendar();
+  } else {
+    // Show login, hide app
+    document.getElementById('login-screen').style.display = '';
+    document.getElementById('app').style.display = 'none';
+    const headerUser = document.getElementById('header-user');
+    if (headerUser) headerUser.innerHTML = '';
+  }
+});
+</script>
+</body>
+</html>
