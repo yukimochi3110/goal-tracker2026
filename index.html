@@ -404,7 +404,7 @@ function renderMemoText(text) {
     const g = S.goals.find(x => `[${x.name}]` === part);
     if (g) {
       const c = COLORS[g.color];
-      return `<span style="display:inline-flex;align-items:center;vertical-align:middle;margin:0 1px">${ico(g.icon, 13, c.primary)}</span>`;
+      return `<span style="display:inline-flex;align-items:center;vertical-align:middle;margin:0 2px;gap:2px;background:${c.light};border-radius:6px;padding:1px 5px 1px 3px">${ico(g.icon, 13, c.primary)}<span style="color:${c.primary};font-size:11px;font-weight:600">${g.name}</span></span>`;
     }
     return part.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br>');
   }).join('');
