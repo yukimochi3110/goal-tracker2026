@@ -1,14 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#8ED4A8"/>
       <stop offset="100%" stop-color="#38AD6C"/>
     </linearGradient>
   </defs>
-  <rect width="32" height="32" rx="7" fill="url(#bg)"/>
-  <g fill="none" stroke="rgba(255,255,255,0.95)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M16 23v-9"/>
-    <path d="M16 19C13 19 10 16 10 12C14 12 16 15 16 19Z"/>
-    <path d="M16 15C19 15 22 12 22 8C18 8 16 11 16 15Z"/>
+  <rect width="24" height="24" rx="5" fill="url(#bg)"/>
+  <g fill="none" stroke="rgba(255,255,255,0.95)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M18 10C18 10 12 14 12 21"/>
+    <path d="M9.349 11.183C7.738 12.389 5.443 12.26 3.979 10.795C1.555 8.372 2.04 3.04 2.04 3.04C2.04 3.04 7.372 2.555 9.795 4.979C10.755 5.938 11.141 7.254 10.954 8.5"/>
+    <path d="M14.964 12.818C13.644 11.383 13.68 9.15 15.071 7.759C17.225 5.604 21.965 6.035 21.965 6.035C21.965 6.035 22.396 10.775 20.241 12.929C19.488 13.683 18.487 14.039 17.5 13.997"/>
+    <path d="M6 7C6 7 12 12 12 21"/>
   </g>
 </svg>

@@ -181,6 +181,14 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 .goal-freq { font-size: 11px; color: var(--text-sub); margin-top: 1px; }
 .goal-del { background: none; border: none; cursor: pointer; padding: 5px; color: var(--text-sub); border-radius: 6px; display: flex; }
 .goal-del:hover { color: #C04040; background: #FEF0F0; }
+.goal-edit { background: none; border: none; cursor: pointer; padding: 5px; color: var(--text-sub); border-radius: 6px; display: flex; }
+.goal-edit:hover { color: var(--accent); background: var(--accent-light); }
+.goal-edit-form { padding: 10px 0 14px; border-bottom: 1px solid var(--border); }
+.goal-edit-form .field-lbl { display: block; font-size: 11px; color: var(--text-sub); font-weight: 600; margin: 8px 0 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+.goal-edit-actions { display: flex; gap: 8px; margin-top: 12px; }
+.goal-save-btn { flex: 1; background: var(--accent); color: #fff; border: none; border-radius: 10px; padding: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+.goal-save-btn:hover { opacity: 0.88; }
+.goal-cancel-btn { background: var(--bg); color: var(--text-sub); border: 1px solid var(--border); border-radius: 10px; padding: 10px 16px; font-size: 14px; cursor: pointer; }
 .add-section { border-top: 2px solid var(--border); padding-top: 18px; margin-top: 4px; }
 .add-h { font-size: 14px; font-weight: 600; color: var(--accent); margin-bottom: 14px; }
 .field-lbl { font-size: 11px; font-weight: 600; color: var(--text-sub); margin-bottom: 6px; display: block; letter-spacing: 0.5px; }
@@ -902,12 +910,40 @@ function renderSettings() {
   const modal = document.getElementById('modal-body');
   const goalRows = S.goals.map(g => {
     const c = COLORS[g.color];
-    return `<div class="goal-row">
-      <div class="goal-icon-box" style="background:${c.light}">${ico(g.icon,24,c.primary)}</div>
-      <div class="goal-info"><div class="goal-name">${g.name}</div><div class="goal-freq">${FREQ_LABELS[g.frequency]}</div></div>
-      <button class="goal-del" data-id="${g.id}">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-      </button>
+    const iconOptsEdit = ICON_KEYS.map(name => {
+      const sel = g.icon === name;
+      return `<div class="icon-opt${sel?' sel':''}" data-icon="${name}" data-gid="${g.id}">${ico(name,20,sel?'var(--accent)':'var(--text-sub)')}</div>`;
+    }).join('');
+    const colorOptsEdit = Object.keys(COLORS).map(name => {
+      return `<div class="color-dot${g.color===name?' sel':''}" data-color="${name}" data-gid="${g.id}" style="background:${COLORS[name].primary}"></div>`;
+    }).join('');
+    const freqOpts = ['daily','weekdays','weekends','monthly'].map(v =>
+      `<option value="${v}"${g.frequency===v?' selected':''}>${FREQ_LABELS[v]}</option>`).join('');
+    return `<div class="goal-row-wrap" data-id="${g.id}">
+      <div class="goal-row">
+        <div class="goal-icon-box" style="background:${c.light}">${ico(g.icon,24,c.primary)}</div>
+        <div class="goal-info"><div class="goal-name">${g.name}</div><div class="goal-freq">${FREQ_LABELS[g.frequency]}</div></div>
+        <button class="goal-edit" data-id="${g.id}" title="編集">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </button>
+        <button class="goal-del" data-id="${g.id}">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+        </button>
+      </div>
+      <div class="goal-edit-form" id="edit-form-${g.id}" style="display:none">
+        <span class="field-lbl">目標名</span>
+        <input class="text-input" id="edit-name-${g.id}" type="text" value="${g.name}">
+        <span class="field-lbl">アイコン</span>
+        <div class="icon-grid" id="edit-icon-grid-${g.id}">${iconOptsEdit}</div>
+        <span class="field-lbl">カラー</span>
+        <div class="color-row" id="edit-color-row-${g.id}">${colorOptsEdit}</div>
+        <span class="field-lbl">頻度</span>
+        <select class="freq-sel" id="edit-freq-${g.id}">${freqOpts}</select>
+        <div class="goal-edit-actions">
+          <button class="goal-cancel-btn" data-id="${g.id}">キャンセル</button>
+          <button class="goal-save-btn" data-id="${g.id}">保存する</button>
+        </div>
+      </div>
     </div>`;
   }).join('') || `<div class="empty-msg">目標がありません</div>`;
 
@@ -961,10 +997,72 @@ function renderSettings() {
     };
   });
 
-  modal.querySelectorAll('.icon-opt').forEach(opt => {
+  // Edit button: toggle edit form
+  modal.querySelectorAll('.goal-edit').forEach(btn => {
+    btn.onclick = () => {
+      const id = btn.dataset.id;
+      const form = document.getElementById('edit-form-' + id);
+      const isOpen = form.style.display !== 'none';
+      // Close all other edit forms
+      modal.querySelectorAll('.goal-edit-form').forEach(f => f.style.display = 'none');
+      if (!isOpen) form.style.display = '';
+    };
+  });
+
+  // Edit form: icon selection (only within each form)
+  modal.querySelectorAll('.goal-edit-form .icon-opt').forEach(opt => {
+    opt.onclick = () => {
+      const gid = opt.dataset.gid;
+      const grid = document.getElementById('edit-icon-grid-' + gid);
+      grid.querySelectorAll('.icon-opt').forEach(o => {
+        const s = o.dataset.icon === opt.dataset.icon;
+        o.classList.toggle('sel', s);
+        o.innerHTML = ico(o.dataset.icon, 20, s ? 'var(--accent)' : 'var(--text-sub)');
+      });
+    };
+  });
+
+  // Edit form: color selection (only within each form)
+  modal.querySelectorAll('.goal-edit-form .color-dot').forEach(dot => {
+    dot.onclick = () => {
+      const gid = dot.dataset.gid;
+      const row = document.getElementById('edit-color-row-' + gid);
+      row.querySelectorAll('.color-dot').forEach(d => d.classList.toggle('sel', d.dataset.color === dot.dataset.color));
+    };
+  });
+
+  // Edit form: cancel
+  modal.querySelectorAll('.goal-cancel-btn').forEach(btn => {
+    btn.onclick = () => {
+      document.getElementById('edit-form-' + btn.dataset.id).style.display = 'none';
+    };
+  });
+
+  // Edit form: save
+  modal.querySelectorAll('.goal-save-btn').forEach(btn => {
+    btn.onclick = () => {
+      const id = btn.dataset.id;
+      const name = document.getElementById('edit-name-' + id).value.trim();
+      if (!name) { alert('目標名を入力してください'); return; }
+      const selIcon = document.querySelector(`#edit-icon-grid-${id} .icon-opt.sel`);
+      const selColor = document.querySelector(`#edit-color-row-${id} .color-dot.sel`);
+      const freq = document.getElementById('edit-freq-' + id).value;
+      const g = S.goals.find(g => g.id === id);
+      if (g) {
+        g.name = name;
+        if (selIcon) g.icon = selIcon.dataset.icon;
+        if (selColor) g.color = selColor.dataset.color;
+        g.frequency = freq;
+      }
+      save(); renderSettings();
+      if (S.tab === 'calendar') renderCalendar();
+    };
+  });
+
+  modal.querySelectorAll('.icon-opt:not([data-gid])').forEach(opt => {
     opt.onclick = () => {
       S.newIcon = opt.dataset.icon;
-      modal.querySelectorAll('.icon-opt').forEach(o => {
+      modal.querySelectorAll('.icon-grid:not([id^="edit-icon"]) .icon-opt').forEach(o => {
         const s = o.dataset.icon === S.newIcon;
         o.classList.toggle('sel', s);
         o.innerHTML = ico(o.dataset.icon, 20, s ? 'var(--accent)' : 'var(--text-sub)');
@@ -972,10 +1070,10 @@ function renderSettings() {
     };
   });
 
-  modal.querySelectorAll('.color-dot').forEach(dot => {
+  modal.querySelectorAll('.color-dot:not([data-gid])').forEach(dot => {
     dot.onclick = () => {
       S.newColor = dot.dataset.color;
-      modal.querySelectorAll('.color-dot').forEach(d => d.classList.toggle('sel', d.dataset.color === S.newColor));
+      modal.querySelectorAll('.color-dot:not([data-gid])').forEach(d => d.classList.toggle('sel', d.dataset.color === S.newColor));
     };
   });
 
