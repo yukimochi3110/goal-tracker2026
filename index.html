@@ -385,7 +385,7 @@ function isActive(goal, y, m, d) {
   if (goal.frequency === 'daily') return true;
   if (goal.frequency === 'weekdays') return w >= 1 && w <= 5;
   if (goal.frequency === 'weekends') return w === 0 || w === 6;
-  if (goal.frequency === 'monthly') return d === 1;
+  if (goal.frequency === 'monthly') return false;
   return false;
 }
 
@@ -412,13 +412,21 @@ function renderMemoText(text) {
 
 function calcAch(y, m, gid) {
   const g = S.goals.find(x => x.id === gid); if (!g) return null;
-  const days = daysInMonth(y, m); let done = 0, total = 0;
+  const days = daysInMonth(y, m);
+  // 月1回: 月内のどこか1日でも○があれば100%
+  if (g.frequency === 'monthly') {
+    for (let d = 1; d <= days; d++) {
+      const ck = getCheck(y, m, d, gid);
+      if (ck === '◎' || ck === '◯') return 100;
+    }
+    return null;
+  }
+  let done = 0, total = 0;
   for (let d = 1; d <= days; d++) {
     if (y === TODAY.getFullYear() && m === TODAY.getMonth()+1 && d > TODAY.getDate()) continue;
     const ck = getCheck(y, m, d, gid);
     const active = isActive(g, y, m, d);
     const achieved = ck === '◎' || ck === '◯';
-    // Count day if it's an active day OR if it has been manually checked on an inactive day
     if (active || achieved) {
       total++;
       if (achieved) done++;
