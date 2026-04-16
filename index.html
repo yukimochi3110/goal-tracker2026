@@ -44,7 +44,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 .ring-item:not(:last-child) { border-right: 1px solid var(--border); }
 .ring-wrapper { position: relative; }
 .ring-name { font-size: 11px; color: var(--text-sub); display: flex; align-items: center; gap: 3px; }
-.streak-badge { position: absolute; top: -4px; right: -8px; background: #E07820; color: #fff; border-radius: 10px; font-size: 10px; font-weight: 700; padding: 1px 5px; display: flex; align-items: center; gap: 1px; white-space: nowrap; }
+
 
 /* ── Month nav ── */
 .month-nav-row { display: flex; align-items: center; justify-content: space-between; padding: 4px 16px 12px; }
@@ -396,7 +396,7 @@ function getMemo(y, m, d) { return S.memos[`${y}-${pad(m)}/${pad(d)}`] || ''; }
 function setMemo(y, m, d, v) { S.memos[`${y}-${pad(m)}/${pad(d)}`] = v; save(); }
 
 // Render memo text: replaces [目標名] tags with goal icons
-function renderMemoText(text) {
+function renderMemoText(text, showName = true) {
   if (!text || !S.goals.length) return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br>');
   const escaped = S.goals.map(g => g.name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'));
   const regex = new RegExp(`(\\[(?:${escaped.join('|')})\\])`, 'g');
@@ -404,7 +404,11 @@ function renderMemoText(text) {
     const g = S.goals.find(x => `[${x.name}]` === part);
     if (g) {
       const c = COLORS[g.color];
-      return `<span style="display:inline-flex;align-items:center;vertical-align:middle;margin:0 2px;gap:2px;background:${c.light};border-radius:6px;padding:1px 5px 1px 3px">${ico(g.icon, 13, c.primary)}<span style="color:${c.primary};font-size:11px;font-weight:600">${g.name}</span></span>`;
+      if (showName) {
+        return `<span style="display:inline-flex;align-items:center;vertical-align:middle;margin:0 2px;gap:2px;background:${c.light};border-radius:6px;padding:1px 5px 1px 3px">${ico(g.icon, 13, c.primary)}<span style="color:${c.primary};font-size:11px;font-weight:600">${g.name}</span></span>`;
+      } else {
+        return `<span style="display:inline-flex;align-items:center;vertical-align:middle;margin:0 1px">${ico(g.icon, 13, c.primary)}</span>`;
+      }
     }
     return part.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br>');
   }).join('');
@@ -435,17 +439,6 @@ function calcAch(y, m, gid) {
   return total === 0 ? null : Math.round(done / total * 100);
 }
 
-function calcStreak(gid) {
-  const g = S.goals.find(x => x.id === gid); if (!g) return 0;
-  let streak = 0, cur = new Date(TODAY.getFullYear(), TODAY.getMonth(), TODAY.getDate());
-  for (let i = 0; i < 400; i++) {
-    const y = cur.getFullYear(), m = cur.getMonth()+1, d = cur.getDate();
-    if (!isActive(g, y, m, d)) { cur.setDate(cur.getDate()-1); continue; }
-    const ck = getCheck(y, m, d, gid);
-    if (ck === '◎' || ck === '◯') { streak++; cur.setDate(cur.getDate()-1); } else break;
-  }
-  return streak;
-}
 
 // Convert Hugeicons [tag, camelCaseAttrs][] to SVG HTML string
 function ico(name, size, color) {
@@ -550,11 +543,9 @@ function buildCalHTML() {
 
   // Rings
   const ringsHTML = goals.map(g => {
-    const c = COLORS[g.color], pct = calcAch(y, m, g.id), str = calcStreak(g.id);
-    const flameSvg = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c0 6-6 8-6 13a6 6 0 0 0 12 0c0-5-6-7-6-13z"/><path d="M12 12c0 3-2 4-2 6a2 2 0 0 0 4 0c0-2-2-3-2-6z"/></svg>`;
-    const badge = str >= 2 ? `<div class="streak-badge">${flameSvg} ${str}</div>` : '';
+    const c = COLORS[g.color], pct = calcAch(y, m, g.id);
     return `<div class="ring-item">
-      <div class="ring-wrapper">${ring(pct, c.primary, 84)}${badge}</div>
+      <div class="ring-wrapper">${ring(pct, c.primary, 84)}</div>
       <div class="ring-name">${ico(g.icon, 14, c.primary)}<span>${g.name}</span></div>
     </div>`;
   }).join('');
@@ -598,7 +589,7 @@ function buildCalHTML() {
     }).join('');
 
     const memoCell = memo
-      ? `<span class="memo-preview-text" data-day="${d}">${renderMemoText(memo)}</span>`
+      ? `<span class="memo-preview-text" data-day="${d}">${renderMemoText(memo, false)}</span>`
       : `<span class="memo-add-btn" data-day="${d}">＋</span>`;
 
     const colCount = goals.length + 2;
@@ -757,11 +748,9 @@ function refreshRings() {
   const items = document.querySelectorAll('.ring-item');
   items.forEach((item, i) => {
     const g = S.goals[i]; if (!g) return;
-    const c = COLORS[g.color], pct = calcAch(S.year, S.month, g.id), str = calcStreak(g.id);
-    const flameSvg2 = `<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c0 6-6 8-6 13a6 6 0 0 0 12 0c0-5-6-7-6-13z"/></svg>`;
-    const badge = str >= 2 ? `<div class="streak-badge">${flameSvg2} ${str}</div>` : '';
+    const c = COLORS[g.color], pct = calcAch(S.year, S.month, g.id);
     const wrap = item.querySelector('.ring-wrapper');
-    wrap.innerHTML = ring(pct, c.primary, 84) + badge;
+    wrap.innerHTML = ring(pct, c.primary, 84);
   });
 }
 
