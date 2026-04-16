@@ -500,7 +500,7 @@ function navigate(tab) {
 }
 
 // ── Text block helper (view/edit toggle) ──
-function setupTextBlock(id, placeholder, onSave) {
+function setupTextBlock(id, placeholder, onSave, renderer) {
   const view   = document.getElementById(id + '-view');
   const editor = document.getElementById(id + '-editor');
   const editBtn = document.getElementById(id + '-edit-btn');
@@ -518,8 +518,11 @@ function setupTextBlock(id, placeholder, onSave) {
     if (editBtn) editBtn.style.display = '';
     editor.classList.remove('open');
     if (val !== undefined) {
+      const rendered = renderer
+        ? renderer(val)
+        : val.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br>');
       view.innerHTML = val
-        ? `<div class="text-content">${val.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>`
+        ? `<div class="text-content">${rendered}</div>`
         : `<div class="text-empty">${placeholder}</div>`;
     }
   }
@@ -653,9 +656,13 @@ function buildCalHTML() {
         <button class="edit-link" id="month-memo-edit-btn">編集</button>
       </div>
       <div class="text-block-view" id="month-memo-view">
-        ${monthMemo ? `<div class="text-content">${monthMemo.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>` : '<div class="text-empty">タップして追加...</div>'}
+        ${monthMemo ? `<div class="text-content">${renderMemoText(monthMemo)}</div>` : '<div class="text-empty">タップして追加...</div>'}
       </div>
       <div class="text-block-edit" id="month-memo-editor">
+        <div class="memo-goal-tags" id="month-memo-tags">${goals.map(g => {
+          const c = COLORS[g.color];
+          return `<button class="memo-tag-btn month-memo-tag" style="background:${c.light};color:${c.primary}" data-insert="${g.name}">${ico(g.icon,13,c.primary)} ${g.name}</button>`;
+        }).join('')}</div>
         <textarea class="big-textarea" id="month-memo-ta" placeholder="この月の振り返りや感想...">${monthMemo}</textarea>
         <div class="edit-actions">
           <button class="btn-cancel-sm" id="month-memo-cancel">キャンセル</button>
@@ -727,10 +734,23 @@ function bindCalEvents() {
     btn.addEventListener('click', () => { S.openMemoDay = null; renderCalendar(); });
   });
 
+  // Month memo icon stamp buttons
+  document.querySelectorAll('.month-memo-tag').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const ta = document.getElementById('month-memo-ta');
+      if (!ta) return;
+      const ins = `[${btn.dataset.insert}] `;
+      const pos = ta.selectionStart;
+      ta.value = ta.value.slice(0, pos) + ins + ta.value.slice(pos);
+      ta.selectionStart = ta.selectionEnd = pos + ins.length;
+      ta.focus();
+    });
+  });
+
   // Month memo
   setupTextBlock('month-memo', 'この月の振り返りや感想...', val => {
     S.monthMemos[`${S.year}-${pad(S.month)}`] = val; save();
-  });
+  }, renderMemoText);
 }
 
 function refreshRings() {
