@@ -55,7 +55,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 /* ── Calendar Table ── */
 .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .cal-table { width: 100%; border-collapse: collapse; }
-.cal-table thead th { background: var(--bg); padding: 8px 6px; font-size: 11px; font-weight: 600; color: var(--text-sub); text-align: center; border-bottom: 2px solid var(--border); border-right: 1px solid var(--border); white-space: nowrap; position: sticky; top: 0; }
+.cal-table thead th { background: var(--bg); padding: 8px 6px; font-size: 12px; font-weight: 600; color: var(--text-sub); text-align: center; border-bottom: 2px solid var(--border); border-right: 1px solid var(--border); white-space: nowrap; position: sticky; top: 0; }
 .cal-table thead th:first-child { text-align: left; padding-left: 8px; border-right: 2px solid var(--border); min-width: 44px; }
 .cal-table thead th.th-memo { text-align: left; padding-left: 10px; min-width: 130px; border-right: none; }
 .cal-table thead th .th-icon { display: flex; flex-direction: column; align-items: center; gap: 2px; }
@@ -70,7 +70,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 /* Date cell */
 .date-cell { white-space: nowrap; }
 .date-num { font-size: 14px; font-weight: 700; line-height: 1.1; }
-.date-dow { font-size: 10px; color: var(--text-sub); }
+.date-dow { font-size: 11px; color: var(--text-sub); }
 .is-sun .date-num, .is-sun .date-dow { color: var(--sun); }
 .is-sat .date-num, .is-sat .date-dow { color: var(--sat); }
 .today-circle { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; background: var(--accent); color: #fff; border-radius: 50%; font-size: 13px; font-weight: 700; }
@@ -83,9 +83,9 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 
 /* Memo cell */
 .memo-cell { padding: 4px 8px !important; min-width: 130px; }
-.memo-preview-text { font-size: 11px; color: var(--text); cursor: pointer; display: block; line-height: 1.4; transition: color 0.15s; }
+.memo-preview-text { font-size: 13px; color: var(--text); cursor: pointer; display: block; line-height: 1.4; transition: color 0.15s; }
 .memo-preview-text:hover { color: var(--accent); }
-.memo-add-btn { font-size: 11px; color: var(--border); cursor: pointer; }
+.memo-add-btn { font-size: 13px; color: var(--border); cursor: pointer; }
 .memo-add-btn:hover { color: var(--accent); }
 
 /* Memo edit row */
@@ -94,7 +94,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 .memo-edit-row td { padding: 0; border-bottom: 2px solid var(--accent); background: var(--accent-light); }
 .memo-edit-inner { padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
 .memo-goal-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
-.memo-tag-btn { font-size: 11px; padding: 3px 8px; border-radius: 10px; cursor: pointer; border: none; font-family: var(--font); display: inline-flex; align-items: center; gap: 3px; }
+.memo-tag-btn { font-size: 12px; padding: 3px 8px; border-radius: 10px; cursor: pointer; border: none; font-family: var(--font); display: inline-flex; align-items: center; gap: 3px; }
 .memo-textarea { width: 100%; border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 13px; font-family: var(--font); background: var(--surface); color: var(--text); resize: vertical; min-height: 60px; }
 .memo-textarea:focus { outline: none; border-color: var(--accent); }
 .memo-actions { display: flex; gap: 8px; justify-content: flex-end; }
@@ -123,20 +123,20 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 /* Month review items in annual tab */
 .month-review-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
 .month-review-item:last-child { border-bottom: none; }
-.month-review-label { font-size: 12px; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
-.month-review-body { font-size: 13px; color: var(--text); line-height: 1.65; white-space: pre-wrap; word-break: break-all; }
+.month-review-label { font-size: 13px; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
+.month-review-body { font-size: 14px; color: var(--text); line-height: 1.65; white-space: pre-wrap; word-break: break-all; }
 
 /* ── Annual ── */
 .year-nav-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
 .year-heading { font-size: 18px; font-weight: 700; }
 .annual-wrap { overflow-x: auto; border-radius: var(--radius); box-shadow: var(--shadow); background: var(--surface); margin-bottom: 16px; }
 .annual-table { width: 100%; border-collapse: collapse; min-width: 500px; }
-.annual-table th { padding: 8px 10px; font-size: 11px; font-weight: 600; color: var(--text-sub); background: var(--bg); border-bottom: 2px solid var(--border); text-align: center; white-space: nowrap; }
+.annual-table th { padding: 8px 10px; font-size: 12px; font-weight: 600; color: var(--text-sub); background: var(--bg); border-bottom: 2px solid var(--border); text-align: center; white-space: nowrap; }
 .annual-table th:first-child { text-align: left; min-width: 100px; }
-.annual-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: center; font-size: 12px; }
+.annual-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: center; font-size: 13px; }
 .annual-table tr:last-child td { border-bottom: none; }
 .annual-table td:first-child { text-align: left; font-weight: 600; }
-.chip { display: inline-block; border-radius: 6px; padding: 2px 6px; font-weight: 700; font-size: 11px; }
+.chip { display: inline-block; border-radius: 6px; padding: 2px 6px; font-weight: 700; font-size: 12px; }
 .chip-hi { background: #E5F5EC; color: #1F7A40; }
 .chip-mi { background: #FEF5E0; color: #9A6500; }
 .chip-lo { background: #FEF0F0; color: #B83030; }
@@ -467,7 +467,7 @@ function ring(pct, primary, size) {
       stroke-dasharray="${circ.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}"
       transform="rotate(-90 ${cx} ${cx})" style="transition:stroke-dashoffset 0.7s ease"/>
     <text x="${cx}" y="${cx+1}" text-anchor="middle" dominant-baseline="middle"
-      font-family="'Noto Sans JP',sans-serif" font-size="${pct===null?12:15}" font-weight="700" fill="var(--text)">${txt}</text>
+      font-family="'Noto Sans JP',sans-serif" font-size="${pct===null?10:12}" font-weight="700" fill="var(--text)">${txt}</text>
   </svg>`;
 }
 
@@ -545,7 +545,7 @@ function buildCalHTML() {
   const ringsHTML = goals.map(g => {
     const c = COLORS[g.color], pct = calcAch(y, m, g.id);
     return `<div class="ring-item">
-      <div class="ring-wrapper">${ring(pct, c.primary, 84)}</div>
+      <div class="ring-wrapper">${ring(pct, c.primary, 68)}</div>
       <div class="ring-name">${ico(g.icon, 14, c.primary)}<span>${g.name}</span></div>
     </div>`;
   }).join('');
@@ -750,7 +750,7 @@ function refreshRings() {
     const g = S.goals[i]; if (!g) return;
     const c = COLORS[g.color], pct = calcAch(S.year, S.month, g.id);
     const wrap = item.querySelector('.ring-wrapper');
-    wrap.innerHTML = ring(pct, c.primary, 84);
+    wrap.innerHTML = ring(pct, c.primary, 68);
   });
 }
 
