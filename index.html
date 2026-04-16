@@ -94,7 +94,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 .memo-edit-row td { padding: 0; border-bottom: 2px solid var(--accent); background: var(--accent-light); }
 .memo-edit-inner { padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
 .memo-goal-tags { display: flex; flex-wrap: wrap; gap: 5px; }
-.memo-tag-btn { font-size: 11px; padding: 3px 8px; border-radius: 10px; cursor: pointer; border: none; font-family: var(--font); }
+.memo-tag-btn { font-size: 11px; padding: 3px 8px; border-radius: 10px; cursor: pointer; border: none; font-family: var(--font); display: inline-flex; align-items: center; gap: 3px; }
 .memo-textarea { width: 100%; border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 13px; font-family: var(--font); background: var(--surface); color: var(--text); resize: vertical; min-height: 60px; }
 .memo-textarea:focus { outline: none; border-color: var(--accent); }
 .memo-actions { display: flex; gap: 8px; justify-content: flex-end; }
@@ -794,7 +794,7 @@ function renderAnnual() {
     const yPct = yT > 0 ? Math.round(yD/yT*100) : null;
     const yCls = yPct === null ? '' : yPct >= 80 ? 'chip chip-hi' : yPct >= 50 ? 'chip chip-mi' : 'chip chip-lo';
     const yCell = yPct === null ? `<span class="chip-em">−</span>` : `<span class="${yCls}">${yPct}%</span>`;
-    return `<tr><td>${ico(g.icon,14,c.primary)} <span style="color:${c.primary}">${g.name}</span></td>${cells}<td>${yCell}</td></tr>`;
+    return `<tr><td><span style="display:inline-flex;align-items:center;gap:3px">${ico(g.icon,14,c.primary)}<span style="color:${c.primary}">${g.name}</span></span></td>${cells}<td>${yCell}</td></tr>`;
   }).join('') || `<tr><td colspan="14" class="empty-msg">目標がありません</td></tr>`;
 
   el.innerHTML = `
@@ -874,31 +874,44 @@ function renderBody() {
   const maxW = Math.max(...last12.map(r => r.weight||0), 1);
   const maxF = Math.max(...last12.map(r => r.fat||0), 1);
 
+  function bodyKeyLabel(key) {
+    const p = key.split('-');
+    if (p.length >= 3) return `${p[0]}年${parseInt(p[1])}月${parseInt(p[2])}日`;
+    return `${p[0]}年${parseInt(p[1])}月`;
+  }
+  function bodyBarLabel(key) {
+    const p = key.split('-');
+    if (p.length >= 3) return `${parseInt(p[1])}/${parseInt(p[2])}`;
+    return `${parseInt(p[1])}月`;
+  }
+
   const wBars = last12.map(r => {
     const h = r.weight ? Math.round((r.weight/maxW)*80) : 3;
-    return `<div class="bar-group"><div class="bar-rect" style="height:${h}px;background:var(--accent)"><span class="bar-val">${r.weight||''}</span></div><span class="bar-lbl">${r.key.slice(5)}月</span></div>`;
+    return `<div class="bar-group"><div class="bar-rect" style="height:${h}px;background:var(--accent)"><span class="bar-val">${r.weight||''}</span></div><span class="bar-lbl">${bodyBarLabel(r.key)}</span></div>`;
   }).join('');
   const fBars = last12.map(r => {
     const h = r.fat ? Math.round((r.fat/maxF)*80) : 3;
-    return `<div class="bar-group"><div class="bar-rect" style="height:${h}px;background:#C4735A"><span class="bar-val">${r.fat||''}</span></div><span class="bar-lbl">${r.key.slice(5)}月</span></div>`;
+    return `<div class="bar-group"><div class="bar-rect" style="height:${h}px;background:#C4735A"><span class="bar-val">${r.fat||''}</span></div><span class="bar-lbl">${bodyBarLabel(r.key)}</span></div>`;
   }).join('');
 
   const tableRows = [...allData].reverse().map(r => `<tr>
-    <td>${r.key.replace('-','年').replace(/-(\d+)$/,(_,m)=>m+'月')}</td>
+    <td>${bodyKeyLabel(r.key)}</td>
     <td>${r.weight??'−'}</td><td>${r.fat??'−'}</td><td>${r.age??'−'}</td>
     <td><button class="del-btn" data-key="${r.key}">削除</button></td>
   </tr>`).join('');
 
-  const curY = TODAY.getFullYear(), curM = TODAY.getMonth()+1;
-  let yOpts = '', mOpts = '';
+  const curY = TODAY.getFullYear(), curM = TODAY.getMonth()+1, curD = TODAY.getDate();
+  let yOpts = '', mOpts = '', dOpts = '';
   for (let i = curY-3; i <= curY+1; i++) yOpts += `<option value="${i}"${i===curY?' selected':''}>${i}年</option>`;
   for (let i = 1; i <= 12; i++) mOpts += `<option value="${pad(i)}"${i===curM?' selected':''}>${i}月</option>`;
+  for (let i = 1; i <= 31; i++) dOpts += `<option value="${pad(i)}"${i===curD?' selected':''}>${i}日</option>`;
 
   el.innerHTML = `
     <div class="body-form-card">
       <div class="form-grid">
         <div class="form-group"><label class="form-label">年</label><select class="form-sel" id="by">${yOpts}</select></div>
         <div class="form-group"><label class="form-label">月</label><select class="form-sel" id="bm">${mOpts}</select></div>
+        <div class="form-group"><label class="form-label">日</label><select class="form-sel" id="bd">${dOpts}</select></div>
       </div>
       <div class="form-grid">
         <div class="form-group"><label class="form-label">体重 (kg)</label><input class="form-input" id="bw" type="number" step="0.1" placeholder="65.0"></div>
@@ -918,11 +931,13 @@ function renderBody() {
     </div>`;
 
   document.getElementById('body-save').onclick = () => {
-    const y = document.getElementById('by').value, m = document.getElementById('bm').value;
+    const y = document.getElementById('by').value;
+    const m = document.getElementById('bm').value;
+    const d = document.getElementById('bd').value;
     const weight = parseFloat(document.getElementById('bw').value)||null;
     const fat    = parseFloat(document.getElementById('bf').value)||null;
     const age    = parseInt(document.getElementById('ba').value)||null;
-    S.bodyData[`${y}-${m}`] = { weight, fat, age };
+    S.bodyData[`${y}-${m}-${d}`] = { weight, fat, age };
     save(); renderBody();
   };
   document.querySelectorAll('.del-btn').forEach(btn => {
