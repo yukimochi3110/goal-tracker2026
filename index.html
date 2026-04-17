@@ -151,6 +151,9 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 .vb-img { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; cursor: pointer; }
 .vb-del { position: absolute; top: 8px; right: 8px; width: 30px; height: 30px; border-radius: 50%; background: rgba(0,0,0,0.55); border: none; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 15px; line-height: 1; transition: background 0.15s; }
 .vb-del:hover { background: rgba(180,40,40,0.8); }
+.vb-loading { position: absolute; inset: 0; background: rgba(0,0,0,0.45); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: #fff; font-size: 14px; font-weight: 600; border-radius: var(--radius); }
+.vb-spinner { width: 28px; height: 28px; border: 3px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: vb-spin 0.7s linear infinite; }
+@keyframes vb-spin { to { transform: rotate(360deg); } }
 
 /* ── Body composition ── */
 .body-form-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; margin-bottom: 16px; }
@@ -279,6 +282,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getAuth, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { getFirestore, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getStorage, ref as sRef, uploadBytes, getDownloadURL, deleteObject } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyDx5MFk_Uhdg3skO1rGszAdS-1OY26hyv4",
@@ -292,6 +296,7 @@ const fbApp = initializeApp(firebaseConfig);
 const auth = getAuth(fbApp);
 await setPersistence(auth, browserLocalPersistence); // iOS Safari ITP対策：localStorageに永続化
 const db = getFirestore(fbApp);
+const storage = getStorage(fbApp);
 const gProvider = new GoogleAuthProvider();
 let currentUser = null;
 
@@ -338,7 +343,7 @@ let S = {
   year: TODAY.getFullYear(), month: TODAY.getMonth() + 1,
   annualYear: TODAY.getFullYear(),
   goals: [], checks: {}, memos: {}, monthMemos: {},
-  yearGoals: {}, yearMemos: {}, bodyData: {},
+  yearGoals: {}, yearMemos: {}, bodyData: {}, visionBoardUrls: {},
   newIcon: 'book', newColor: 'moss',
   openMemoDay: null,
 };
@@ -355,7 +360,8 @@ async function save() {
   await setDoc(doc(db, 'users', currentUser.uid), {
     goals: S.goals, checks: S.checks, memos: S.memos,
     monthMemos: S.monthMemos, yearGoals: S.yearGoals,
-    yearMemos: S.yearMemos, bodyData: S.bodyData
+    yearMemos: S.yearMemos, bodyData: S.bodyData,
+    visionBoardUrls: S.visionBoardUrls || {}
   });
 }
 
@@ -806,6 +812,7 @@ function renderAnnual() {
       <img class="vb-img" id="vb-img" style="display:none" alt="ビジョンボード">
       <button class="vb-del" id="vb-del" style="display:none" title="削除">✕</button>
       <input type="file" id="vb-input" accept="image/*" style="display:none">
+      <div class="vb-loading" id="vb-loading" style="display:none"><div class="vb-spinner"></div>アップロード中...</div>
     </div>
     <div class="year-nav-row">
       <button class="nav-arrow-btn" id="prev-y">&#8249;</button>
@@ -861,14 +868,14 @@ function renderAnnual() {
 }
 
 function initVisionBoard(y) {
-  const key    = `visionBoard_${y}`;
-  const elImg  = document.getElementById('vb-img');
-  const elDel  = document.getElementById('vb-del');
-  const elEmpty = document.getElementById('vb-empty');
-  const elInput = document.getElementById('vb-input');
+  const elImg    = document.getElementById('vb-img');
+  const elDel    = document.getElementById('vb-del');
+  const elEmpty  = document.getElementById('vb-empty');
+  const elInput  = document.getElementById('vb-input');
+  const elLoader = document.getElementById('vb-loading');
 
-  function show(data) {
-    elImg.src = data;
+  function show(url) {
+    elImg.src = url;
     elImg.style.display = '';
     elDel.style.display = '';
     elEmpty.style.display = 'none';
@@ -879,29 +886,51 @@ function initVisionBoard(y) {
     elEmpty.style.display = '';
     elImg.src = '';
   }
+  function setLoading(on) {
+    elLoader.style.display = on ? '' : 'none';
+  }
 
-  const stored = localStorage.getItem(key);
-  if (stored) show(stored); else clear();
+  const url = (S.visionBoardUrls || {})[y];
+  if (url) show(url); else clear();
 
   elEmpty.onclick = () => elInput.click();
   elImg.onclick   = () => elInput.click();
 
-  elDel.onclick = e => {
+  elDel.onclick = async e => {
     e.stopPropagation();
-    localStorage.removeItem(key);
-    clear();
+    setLoading(true);
+    try {
+      const fileRef = sRef(storage, `users/${currentUser.uid}/visionBoard/${y}.jpg`);
+      await deleteObject(fileRef).catch(() => {});  // Storage ファイル削除（存在しなくても無視）
+      if (!S.visionBoardUrls) S.visionBoardUrls = {};
+      delete S.visionBoardUrls[y];
+      await save();
+      clear();
+    } catch(err) {
+      alert('削除に失敗しました: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  elInput.onchange = e => {
+  elInput.onchange = async e => {
     const file = e.target.files[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => {
-      localStorage.setItem(key, ev.target.result);
-      show(ev.target.result);
-    };
-    reader.readAsDataURL(file);
     elInput.value = '';
+    setLoading(true);
+    try {
+      const fileRef = sRef(storage, `users/${currentUser.uid}/visionBoard/${y}.jpg`);
+      await uploadBytes(fileRef, file);
+      const downloadUrl = await getDownloadURL(fileRef);
+      if (!S.visionBoardUrls) S.visionBoardUrls = {};
+      S.visionBoardUrls[y] = downloadUrl;
+      await save();
+      show(downloadUrl);
+    } catch(err) {
+      alert('アップロードに失敗しました: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 }
 
