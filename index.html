@@ -281,8 +281,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 // ── Firebase SDK ──
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getAuth, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { getFirestore, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-import { getStorage, ref as sRef, uploadBytes, getDownloadURL, deleteObject } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
+import { getFirestore, doc, setDoc, getDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyDx5MFk_Uhdg3skO1rGszAdS-1OY26hyv4",
@@ -296,7 +295,6 @@ const fbApp = initializeApp(firebaseConfig);
 const auth = getAuth(fbApp);
 await setPersistence(auth, browserLocalPersistence); // iOS Safari ITP対策：localStorageに永続化
 const db = getFirestore(fbApp);
-const storage = getStorage(fbApp);
 const gProvider = new GoogleAuthProvider();
 let currentUser = null;
 
@@ -343,7 +341,8 @@ let S = {
   year: TODAY.getFullYear(), month: TODAY.getMonth() + 1,
   annualYear: TODAY.getFullYear(),
   goals: [], checks: {}, memos: {}, monthMemos: {},
-  yearGoals: {}, yearMemos: {}, bodyData: {}, visionBoardUrls: {},
+  yearGoals: {}, yearMemos: {}, bodyData: {},
+  visionBoardCache: {},  // 端末内キャッシュ（Firestoreサブコレクションから読み込み）
   newIcon: 'book', newColor: 'moss',
   openMemoDay: null,
 };
@@ -360,8 +359,7 @@ async function save() {
   await setDoc(doc(db, 'users', currentUser.uid), {
     goals: S.goals, checks: S.checks, memos: S.memos,
     monthMemos: S.monthMemos, yearGoals: S.yearGoals,
-    yearMemos: S.yearMemos, bodyData: S.bodyData,
-    visionBoardUrls: S.visionBoardUrls || {}
+    yearMemos: S.yearMemos, bodyData: S.bodyData
   });
 }
 
@@ -867,6 +865,42 @@ function renderAnnual() {
   initVisionBoard(y);
 }
 
+// ── Vision board helpers ──────────────────────────────────────────────────
+// 画像を Canvas でリサイズ・圧縮して JPEG Base64 を返す（最大幅 1280px / quality 0.78）
+function compressImage(file, maxW = 1280, quality = 0.78) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const blobUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(blobUrl);
+      let w = img.naturalWidth, h = img.naturalHeight;
+      if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = () => { URL.revokeObjectURL(blobUrl); reject(new Error('画像の読み込みに失敗しました')); };
+    img.src = blobUrl;
+  });
+}
+
+// Firestore サブコレクション users/{uid}/visionBoards/{year} に保存・取得・削除
+async function saveVisionBoard(y, data) {
+  if (!currentUser) return;
+  const ref = doc(db, 'users', currentUser.uid, 'visionBoards', String(y));
+  if (data) {
+    await setDoc(ref, { data });
+  } else {
+    await deleteDoc(ref);
+  }
+}
+async function loadVisionBoard(y) {
+  if (!currentUser) return null;
+  const snap = await getDoc(doc(db, 'users', currentUser.uid, 'visionBoards', String(y)));
+  return snap.exists() ? (snap.data().data || null) : null;
+}
+
 function initVisionBoard(y) {
   const elImg    = document.getElementById('vb-img');
   const elDel    = document.getElementById('vb-del');
@@ -874,8 +908,8 @@ function initVisionBoard(y) {
   const elInput  = document.getElementById('vb-input');
   const elLoader = document.getElementById('vb-loading');
 
-  function show(url) {
-    elImg.src = url;
+  function show(data) {
+    elImg.src = data;
     elImg.style.display = '';
     elDel.style.display = '';
     elEmpty.style.display = 'none';
@@ -890,8 +924,16 @@ function initVisionBoard(y) {
     elLoader.style.display = on ? '' : 'none';
   }
 
-  const url = (S.visionBoardUrls || {})[y];
-  if (url) show(url); else clear();
+  // キャッシュ確認 → なければ Firestore から取得
+  if (y in S.visionBoardCache) {
+    if (S.visionBoardCache[y]) show(S.visionBoardCache[y]); else clear();
+  } else {
+    setLoading(true);
+    loadVisionBoard(y)
+      .then(data => { S.visionBoardCache[y] = data; if (data) show(data); else clear(); })
+      .catch(err => { console.error('visionBoard load error:', err); clear(); })
+      .finally(() => setLoading(false));
+  }
 
   elEmpty.onclick = () => elInput.click();
   elImg.onclick   = () => elInput.click();
@@ -900,13 +942,11 @@ function initVisionBoard(y) {
     e.stopPropagation();
     setLoading(true);
     try {
-      const fileRef = sRef(storage, `users/${currentUser.uid}/visionBoard/${y}.jpg`);
-      await deleteObject(fileRef).catch(() => {});  // Storage ファイル削除（存在しなくても無視）
-      if (!S.visionBoardUrls) S.visionBoardUrls = {};
-      delete S.visionBoardUrls[y];
-      await save();
+      await saveVisionBoard(y, null);
+      S.visionBoardCache[y] = null;
       clear();
     } catch(err) {
+      console.error('visionBoard delete error:', err);
       alert('削除に失敗しました: ' + err.message);
     } finally {
       setLoading(false);
@@ -919,14 +959,12 @@ function initVisionBoard(y) {
     elInput.value = '';
     setLoading(true);
     try {
-      const fileRef = sRef(storage, `users/${currentUser.uid}/visionBoard/${y}.jpg`);
-      await uploadBytes(fileRef, file);
-      const downloadUrl = await getDownloadURL(fileRef);
-      if (!S.visionBoardUrls) S.visionBoardUrls = {};
-      S.visionBoardUrls[y] = downloadUrl;
-      await save();
-      show(downloadUrl);
+      const data = await compressImage(file);
+      await saveVisionBoard(y, data);
+      S.visionBoardCache[y] = data;
+      show(data);
     } catch(err) {
+      console.error('visionBoard upload error:', err);
       alert('アップロードに失敗しました: ' + err.message);
     } finally {
       setLoading(false);
