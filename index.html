@@ -142,6 +142,16 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 .chip-lo { background: #FEF0F0; color: #B83030; }
 .chip-em { color: var(--text-sub); font-size: 12px; }
 
+/* ── Vision Board ── */
+.vb-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; margin-bottom: 16px; position: relative; }
+.vb-empty { aspect-ratio: 16/9; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer; border: 2px dashed var(--border); border-radius: var(--radius); color: var(--text-sub); transition: border-color 0.2s, background 0.2s; }
+.vb-empty:hover { border-color: var(--accent); background: var(--accent-light); color: var(--accent); }
+.vb-empty-label { font-size: 15px; font-weight: 600; }
+.vb-empty-sub { font-size: 13px; }
+.vb-img { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; cursor: pointer; }
+.vb-del { position: absolute; top: 8px; right: 8px; width: 30px; height: 30px; border-radius: 50%; background: rgba(0,0,0,0.55); border: none; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 15px; line-height: 1; transition: background 0.15s; }
+.vb-del:hover { background: rgba(180,40,40,0.8); }
+
 /* ── Body composition ── */
 .body-form-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; margin-bottom: 16px; }
 .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 12px; }
@@ -787,6 +797,16 @@ function renderAnnual() {
   }).join('') || `<tr><td colspan="14" class="empty-msg">目標がありません</td></tr>`;
 
   el.innerHTML = `
+    <div class="vb-card" id="vb-card">
+      <div class="vb-empty" id="vb-empty">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+        <span class="vb-empty-label">ビジョンボードを追加</span>
+        <span class="vb-empty-sub">タップして画像を選択</span>
+      </div>
+      <img class="vb-img" id="vb-img" style="display:none" alt="ビジョンボード">
+      <button class="vb-del" id="vb-del" style="display:none" title="削除">✕</button>
+      <input type="file" id="vb-input" accept="image/*" style="display:none">
+    </div>
     <div class="year-nav-row">
       <button class="nav-arrow-btn" id="prev-y">&#8249;</button>
       <span class="year-heading">${y}年</span>
@@ -837,6 +857,52 @@ function renderAnnual() {
 
   setupTextBlock('year-goal', '今年の目標...', val => { S.yearGoals[y] = val; save(); });
   setupTextBlock('year-memo', '今年の振り返り...', val => { S.yearMemos[y] = val; save(); });
+  initVisionBoard(y);
+}
+
+function initVisionBoard(y) {
+  const key    = `visionBoard_${y}`;
+  const elImg  = document.getElementById('vb-img');
+  const elDel  = document.getElementById('vb-del');
+  const elEmpty = document.getElementById('vb-empty');
+  const elInput = document.getElementById('vb-input');
+
+  function show(data) {
+    elImg.src = data;
+    elImg.style.display = '';
+    elDel.style.display = '';
+    elEmpty.style.display = 'none';
+  }
+  function clear() {
+    elImg.style.display = 'none';
+    elDel.style.display = 'none';
+    elEmpty.style.display = '';
+    elImg.src = '';
+  }
+
+  const stored = localStorage.getItem(key);
+  if (stored) show(stored); else clear();
+
+  elEmpty.onclick = () => elInput.click();
+  elImg.onclick   = () => elInput.click();
+
+  elDel.onclick = e => {
+    e.stopPropagation();
+    localStorage.removeItem(key);
+    clear();
+  };
+
+  elInput.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      localStorage.setItem(key, ev.target.result);
+      show(ev.target.result);
+    };
+    reader.readAsDataURL(file);
+    elInput.value = '';
+  };
 }
 
 function buildMonthReviewHTML(y) {
