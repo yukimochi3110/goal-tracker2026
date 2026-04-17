@@ -281,7 +281,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 // ── Firebase SDK ──
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getAuth, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { getFirestore, doc, setDoc, getDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getFirestore, doc, setDoc, getDoc, updateDoc, deleteField } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyDx5MFk_Uhdg3skO1rGszAdS-1OY26hyv4",
@@ -342,7 +342,7 @@ let S = {
   annualYear: TODAY.getFullYear(),
   goals: [], checks: {}, memos: {}, monthMemos: {},
   yearGoals: {}, yearMemos: {}, bodyData: {},
-  visionBoardCache: {},  // 端末内キャッシュ（Firestoreサブコレクションから読み込み）
+  visionBoards: {},  // { [year]: base64string | null }
   newIcon: 'book', newColor: 'moss',
   openMemoDay: null,
 };
@@ -360,7 +360,7 @@ async function save() {
     goals: S.goals, checks: S.checks, memos: S.memos,
     monthMemos: S.monthMemos, yearGoals: S.yearGoals,
     yearMemos: S.yearMemos, bodyData: S.bodyData
-  });
+  }, { merge: true });
 }
 
 async function loadFromFirestore() {
@@ -866,39 +866,40 @@ function renderAnnual() {
 }
 
 // ── Vision board helpers ──────────────────────────────────────────────────
-// 画像を Canvas でリサイズ・圧縮して JPEG Base64 を返す（最大幅 1280px / quality 0.78）
-function compressImage(file, maxW = 1280, quality = 0.78) {
+// 画像を Canvas でリサイズ・圧縮して JPEG Base64 を返す（2段階圧縮）
+function compressImage(file) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     const blobUrl = URL.createObjectURL(file);
     img.onload = () => {
       URL.revokeObjectURL(blobUrl);
-      let w = img.naturalWidth, h = img.naturalHeight;
-      if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
-      const canvas = document.createElement('canvas');
-      canvas.width = w; canvas.height = h;
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      resolve(canvas.toDataURL('image/jpeg', quality));
+      function encode(maxW, quality) {
+        let w = img.naturalWidth, h = img.naturalHeight;
+        if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        return canvas.toDataURL('image/jpeg', quality);
+      }
+      let data = encode(800, 0.65);
+      // 750KB 超えたらさらに圧縮
+      if (data.length > 750 * 1024) data = encode(640, 0.55);
+      resolve(data);
     };
     img.onerror = () => { URL.revokeObjectURL(blobUrl); reject(new Error('画像の読み込みに失敗しました')); };
     img.src = blobUrl;
   });
 }
 
-// Firestore サブコレクション users/{uid}/visionBoards/{year} に保存・取得・削除
+// メインドキュメント users/{uid} の visionBoards フィールドに merge で保存
 async function saveVisionBoard(y, data) {
   if (!currentUser) return;
-  const ref = doc(db, 'users', currentUser.uid, 'visionBoards', String(y));
+  const ref = doc(db, 'users', currentUser.uid);
   if (data) {
-    await setDoc(ref, { data });
+    await setDoc(ref, { visionBoards: { [y]: data } }, { merge: true });
   } else {
-    await deleteDoc(ref);
+    await updateDoc(ref, { [`visionBoards.${y}`]: deleteField() });
   }
-}
-async function loadVisionBoard(y) {
-  if (!currentUser) return null;
-  const snap = await getDoc(doc(db, 'users', currentUser.uid, 'visionBoards', String(y)));
-  return snap.exists() ? (snap.data().data || null) : null;
 }
 
 function initVisionBoard(y) {
@@ -924,16 +925,9 @@ function initVisionBoard(y) {
     elLoader.style.display = on ? '' : 'none';
   }
 
-  // キャッシュ確認 → なければ Firestore から取得
-  if (y in S.visionBoardCache) {
-    if (S.visionBoardCache[y]) show(S.visionBoardCache[y]); else clear();
-  } else {
-    setLoading(true);
-    loadVisionBoard(y)
-      .then(data => { S.visionBoardCache[y] = data; if (data) show(data); else clear(); })
-      .catch(err => { console.error('visionBoard load error:', err); clear(); })
-      .finally(() => setLoading(false));
-  }
+  // S.visionBoards は loadFromFirestore() で既に読み込み済み
+  const cached = S.visionBoards && S.visionBoards[y];
+  if (cached) show(cached); else clear();
 
   elEmpty.onclick = () => elInput.click();
   elImg.onclick   = () => elInput.click();
@@ -943,11 +937,11 @@ function initVisionBoard(y) {
     setLoading(true);
     try {
       await saveVisionBoard(y, null);
-      S.visionBoardCache[y] = null;
+      if (S.visionBoards) delete S.visionBoards[y];
       clear();
     } catch(err) {
       console.error('visionBoard delete error:', err);
-      alert('削除に失敗しました: ' + err.message);
+      alert('削除に失敗しました [' + (err.code || err.message) + ']');
     } finally {
       setLoading(false);
     }
@@ -961,11 +955,12 @@ function initVisionBoard(y) {
     try {
       const data = await compressImage(file);
       await saveVisionBoard(y, data);
-      S.visionBoardCache[y] = data;
+      if (!S.visionBoards) S.visionBoards = {};
+      S.visionBoards[y] = data;
       show(data);
     } catch(err) {
       console.error('visionBoard upload error:', err);
-      alert('アップロードに失敗しました: ' + err.message);
+      alert('アップロードに失敗しました [' + (err.code || err.message) + ']');
     } finally {
       setLoading(false);
     }
