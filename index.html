@@ -148,7 +148,11 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 .vb-empty:hover { border-color: var(--accent); background: var(--accent-light); color: var(--accent); }
 .vb-empty-label { font-size: 15px; font-weight: 600; }
 .vb-empty-sub { font-size: 13px; }
-.vb-img { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; cursor: pointer; }
+.vb-img { width: 100%; height: auto; object-fit: contain; background: #1a1a1a; display: block; cursor: zoom-in; }
+.vb-lb { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: flex; align-items: center; justify-content: center; }
+.vb-lb-img { max-width: 96vw; max-height: 92vh; object-fit: contain; border-radius: 4px; display: block; }
+.vb-lb-close { position: fixed; top: 14px; right: 14px; width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,0.18); border: none; color: #fff; font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s; }
+.vb-lb-close:hover { background: rgba(255,255,255,0.32); }
 .vb-del { position: absolute; top: 8px; right: 8px; width: 30px; height: 30px; border-radius: 50%; background: rgba(0,0,0,0.55); border: none; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 15px; line-height: 1; transition: background 0.15s; }
 .vb-del:hover { background: rgba(180,40,40,0.8); }
 .vb-loading { position: absolute; inset: 0; background: rgba(0,0,0,0.45); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: #fff; font-size: 14px; font-weight: 600; border-radius: var(--radius); }
@@ -801,6 +805,11 @@ function renderAnnual() {
   }).join('') || `<tr><td colspan="14" class="empty-msg">目標がありません</td></tr>`;
 
   el.innerHTML = `
+    <div class="year-nav-row">
+      <button class="nav-arrow-btn" id="prev-y">&#8249;</button>
+      <span class="year-heading">${y}年</span>
+      <button class="nav-arrow-btn" id="next-y">&#8250;</button>
+    </div>
     <div class="vb-card" id="vb-card">
       <div class="vb-empty" id="vb-empty">
         <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
@@ -811,11 +820,6 @@ function renderAnnual() {
       <button class="vb-del" id="vb-del" style="display:none" title="削除">✕</button>
       <input type="file" id="vb-input" accept="image/*" style="display:none">
       <div class="vb-loading" id="vb-loading" style="display:none"><div class="vb-spinner"></div>アップロード中...</div>
-    </div>
-    <div class="year-nav-row">
-      <button class="nav-arrow-btn" id="prev-y">&#8249;</button>
-      <span class="year-heading">${y}年</span>
-      <button class="nav-arrow-btn" id="next-y">&#8250;</button>
     </div>
     <div class="section-block mb16">
       <div class="section-row">
@@ -855,6 +859,10 @@ function renderAnnual() {
           <button class="btn-save">保存</button>
         </div>
       </div>
+    </div>
+    <div class="vb-lb" id="vb-lb" style="display:none">
+      <button class="vb-lb-close" id="vb-lb-close">✕</button>
+      <img class="vb-lb-img" id="vb-lb-img" alt="ビジョンボード拡大">
     </div>`;
 
   document.getElementById('prev-y').onclick = () => { S.annualYear--; renderAnnual(); };
@@ -929,8 +937,25 @@ function initVisionBoard(y) {
   const cached = S.visionBoards && S.visionBoards[y];
   if (cached) show(cached); else clear();
 
+  // ライトボックス
+  const elLb      = document.getElementById('vb-lb');
+  const elLbImg   = document.getElementById('vb-lb-img');
+  const elLbClose = document.getElementById('vb-lb-close');
+  function openLb() {
+    elLbImg.src = elImg.src;
+    elLb.style.display = '';
+    document.body.style.overflow = 'hidden';
+  }
+  function closeLb() {
+    elLb.style.display = 'none';
+    document.body.style.overflow = '';
+  }
+  elLbClose.onclick = e => { e.stopPropagation(); closeLb(); };
+  elLb.onclick = closeLb;
+  elLbImg.onclick = e => e.stopPropagation();
+
   elEmpty.onclick = () => elInput.click();
-  elImg.onclick   = () => elInput.click();
+  elImg.onclick   = openLb;
 
   elDel.onclick = async e => {
     e.stopPropagation();
