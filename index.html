@@ -172,11 +172,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 .submit-btn:hover { opacity: 0.88; }
 .chart-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; margin-bottom: 16px; overflow-x: auto; }
 .chart-label { font-size: 12px; font-weight: 600; color: var(--text-sub); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px; }
-.bar-chart { display: flex; align-items: flex-end; gap: 4px; height: 100px; padding-top: 20px; min-width: 280px; }
-.bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 18px; position: relative; }
-.bar-rect { width: 100%; border-radius: 4px 4px 0 0; position: relative; min-height: 3px; transition: height 0.5s ease; }
-.bar-val { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); font-size: 9px; font-weight: 600; color: var(--text-sub); white-space: nowrap; }
-.bar-lbl { font-size: 9px; color: var(--text-sub); }
+.line-chart-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .data-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); overflow-x: auto; }
 .data-table { width: 100%; border-collapse: collapse; min-width: 300px; }
 .data-table th { padding: 9px 8px; font-size: 13px; font-weight: 600; color: var(--text-sub); background: var(--bg); border-bottom: 2px solid var(--border); text-align: center; white-space: nowrap; }
@@ -1058,33 +1054,67 @@ function buildMonthReviewHTML(y) {
   </div>`;
 }
 
+// ── Body helpers ──
+function bodyKeyLabel(key) {
+  const p = key.split('-');
+  if (p.length >= 3) return `${p[0]}年${parseInt(p[1])}月${parseInt(p[2])}日`;
+  return `${p[0]}年${parseInt(p[1])}月`;
+}
+function bodyBarLabel(key) {
+  const p = key.split('-');
+  if (p.length >= 3) return `${parseInt(p[1])}/${parseInt(p[2])}`;
+  return `${parseInt(p[1])}月`;
+}
+
+function makeLineChart(items, key, color) {
+  const n = items.length;
+  if (!n) return '';
+  const W = Math.max(300, n * 40);
+  const H = 120, padT = 24, padB = 20, padL = 6, padR = 6;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const vals = items.map(r => r[key] ?? null);
+  const valid = vals.filter(v => v !== null);
+  if (!valid.length) return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="display:block"><text x="${W/2}" y="${H/2}" text-anchor="middle" font-size="11" fill="var(--text-sub)" font-family="'Noto Sans JP',sans-serif">データなし</text></svg>`;
+  const minV = Math.min(...valid), maxV = Math.max(...valid);
+  const range = maxV - minV;
+  const vy = v => range ? padT + plotH - ((v - minV) / range) * plotH : padT + plotH / 2;
+  const vx = i => padL + (n === 1 ? plotW / 2 : (i / (n - 1)) * plotW);
+  let grid = '';
+  for (let g = 0; g <= 3; g++) {
+    const y = (padT + (plotH / 3) * g).toFixed(1);
+    grid += `<line x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}" stroke="var(--border)" stroke-width="0.8"/>`;
+  }
+  let lines = '', seg = [];
+  for (let i = 0; i < n; i++) {
+    if (vals[i] !== null) {
+      seg.push(`${vx(i).toFixed(1)},${vy(vals[i]).toFixed(1)}`);
+    } else {
+      if (seg.length >= 2) lines += `<polyline points="${seg.join(' ')}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
+      seg = [];
+    }
+  }
+  if (seg.length >= 2) lines += `<polyline points="${seg.join(' ')}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
+  let dots = '', vlbls = '', xlbls = '';
+  for (let i = 0; i < n; i++) {
+    const x = vx(i).toFixed(1);
+    xlbls += `<text x="${x}" y="${H - 3}" text-anchor="middle" font-size="8" font-family="'Noto Sans JP',sans-serif" fill="var(--text-sub)">${bodyBarLabel(items[i].key)}</text>`;
+    if (vals[i] !== null) {
+      const y = vy(vals[i]).toFixed(1);
+      dots += `<circle cx="${x}" cy="${y}" r="3.5" fill="${color}" stroke="var(--surface)" stroke-width="1.5"/>`;
+      vlbls += `<text x="${x}" y="${(parseFloat(y) - 7).toFixed(1)}" text-anchor="middle" font-size="9" font-weight="600" font-family="'Noto Sans JP',sans-serif" fill="${color}">${vals[i]}</text>`;
+    }
+  }
+  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="display:block">${grid}${lines}${dots}${vlbls}${xlbls}</svg>`;
+}
+
 // ── Body ──
 function renderBody() {
   const el = document.getElementById('page-body');
   const allData = Object.entries(S.bodyData).sort((a,b) => a[0].localeCompare(b[0])).map(([k,v]) => ({key:k,...v}));
   const last12 = allData.slice(-12);
-  const maxW = Math.max(...last12.map(r => r.weight||0), 1);
-  const maxF = Math.max(...last12.map(r => r.fat||0), 1);
 
-  function bodyKeyLabel(key) {
-    const p = key.split('-');
-    if (p.length >= 3) return `${p[0]}年${parseInt(p[1])}月${parseInt(p[2])}日`;
-    return `${p[0]}年${parseInt(p[1])}月`;
-  }
-  function bodyBarLabel(key) {
-    const p = key.split('-');
-    if (p.length >= 3) return `${parseInt(p[1])}/${parseInt(p[2])}`;
-    return `${parseInt(p[1])}月`;
-  }
-
-  const wBars = last12.map(r => {
-    const h = r.weight ? Math.round((r.weight/maxW)*80) : 3;
-    return `<div class="bar-group"><div class="bar-rect" style="height:${h}px;background:var(--accent)"><span class="bar-val">${r.weight||''}</span></div><span class="bar-lbl">${bodyBarLabel(r.key)}</span></div>`;
-  }).join('');
-  const fBars = last12.map(r => {
-    const h = r.fat ? Math.round((r.fat/maxF)*80) : 3;
-    return `<div class="bar-group"><div class="bar-rect" style="height:${h}px;background:#C4735A"><span class="bar-val">${r.fat||''}</span></div><span class="bar-lbl">${bodyBarLabel(r.key)}</span></div>`;
-  }).join('');
+  const wChart = makeLineChart(last12, 'weight', 'var(--accent)');
+  const fChart = makeLineChart(last12, 'fat', '#C4735A');
 
   const tableRows = [...allData].reverse().map(r => `<tr>
     <td>${bodyKeyLabel(r.key)}</td>
@@ -1113,8 +1143,8 @@ function renderBody() {
       <button class="submit-btn" id="body-save">記録する</button>
     </div>
     ${last12.length ? `
-    <div class="chart-card"><div class="chart-label">体重推移 (kg)</div><div class="bar-chart">${wBars}</div></div>
-    <div class="chart-card"><div class="chart-label">体脂肪率推移 (%)</div><div class="bar-chart">${fBars}</div></div>` : ''}
+    <div class="chart-card"><div class="chart-label">体重推移 (kg)</div><div class="line-chart-wrap">${wChart}</div></div>
+    <div class="chart-card"><div class="chart-label">体脂肪率推移 (%)</div><div class="line-chart-wrap">${fChart}</div></div>` : ''}
     <div class="data-card">
       <table class="data-table">
         <thead><tr><th>年月</th><th>体重</th><th>体脂肪率</th><th>体内年齢</th><th></th></tr></thead>
