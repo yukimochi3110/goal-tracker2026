@@ -1069,8 +1069,8 @@ function bodyBarLabel(key) {
 function makeLineChart(items, key, color) {
   const n = items.length;
   if (!n) return '';
-  const W = Math.max(300, n * 40);
-  const H = 120, padT = 24, padB = 20, padL = 6, padR = 6;
+  const W = Math.max(320, n * 44);
+  const H = 130, padT = 28, padB = 22, padL = 28, padR = 28;
   const plotW = W - padL - padR, plotH = H - padT - padB;
   const vals = items.map(r => r[key] ?? null);
   const valid = vals.filter(v => v !== null);
@@ -1097,11 +1097,12 @@ function makeLineChart(items, key, color) {
   let dots = '', vlbls = '', xlbls = '';
   for (let i = 0; i < n; i++) {
     const x = vx(i).toFixed(1);
-    xlbls += `<text x="${x}" y="${H - 3}" text-anchor="middle" font-size="8" font-family="'Noto Sans JP',sans-serif" fill="var(--text-sub)">${bodyBarLabel(items[i].key)}</text>`;
+    const anchor = i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle';
+    xlbls += `<text x="${x}" y="${H - 4}" text-anchor="${anchor}" font-size="10" font-family="'Noto Sans JP',sans-serif" fill="var(--text-sub)">${bodyBarLabel(items[i].key)}</text>`;
     if (vals[i] !== null) {
       const y = vy(vals[i]).toFixed(1);
-      dots += `<circle cx="${x}" cy="${y}" r="3.5" fill="${color}" stroke="var(--surface)" stroke-width="1.5"/>`;
-      vlbls += `<text x="${x}" y="${(parseFloat(y) - 7).toFixed(1)}" text-anchor="middle" font-size="9" font-weight="600" font-family="'Noto Sans JP',sans-serif" fill="${color}">${vals[i]}</text>`;
+      dots += `<circle cx="${x}" cy="${y}" r="4" fill="${color}" stroke="var(--surface)" stroke-width="1.5"/>`;
+      vlbls += `<text x="${x}" y="${(parseFloat(y) - 9).toFixed(1)}" text-anchor="${anchor}" font-size="11" font-weight="600" font-family="'Noto Sans JP',sans-serif" fill="${color}">${vals[i]}</text>`;
     }
   }
   return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="display:block">${grid}${lines}${dots}${vlbls}${xlbls}</svg>`;
