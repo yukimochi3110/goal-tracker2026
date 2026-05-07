@@ -1045,7 +1045,7 @@ function buildMonthReviewHTML(y) {
     if (!memo) return '';
     return `<div class="month-review-item">
       <div class="month-review-label">${label}</div>
-      <div class="month-review-body">${renderMemoText(memo)}</div>
+      <div class="month-review-body">${memo.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>
     </div>`;
   }).join('');
   return `<div class="section-block">
