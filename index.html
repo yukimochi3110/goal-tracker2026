@@ -586,24 +586,25 @@ function changeMonth(delta) {
   renderCalendar();
 }
 
-// Swipe left/right on the calendar page to move between months.
-// Listeners live on #page-calendar itself so they survive innerHTML re-renders.
-function setupCalSwipe() {
-  const page = document.getElementById('page-calendar');
+// 左右スワイプでページ送りする汎用ハンドラ。
+// リスナーはコンテナ自体に付けるので、innerHTML の再描画後も生き続ける。
+// opts.exclude: この中で始まったタッチは無視（入力欄など）
+// opts.hScroll: 横スクロール領域。実際にスクロールした場合はスワイプ扱いしない
+// opts.onSwipe: 左スワイプで +1、右スワイプで -1 が渡る
+function setupSwipeNav(pageId, opts) {
+  const page = document.getElementById(pageId);
   let startX = 0, startY = 0, startTime = 0, tracking = false;
   let scrollEl = null, scrollLeft0 = 0;
 
   page.addEventListener('touchstart', e => {
     tracking = false;
     if (e.touches.length !== 1) return;
-    // 入力中やメモ編集中は誤操作防止のため無効
-    if (e.target.closest('textarea, input, .memo-edit-inner, .text-block-edit')) return;
+    if (e.target.closest(opts.exclude)) return;
     tracking = true;
     startX = e.touches[0].clientX;
     startY = e.touches[0].clientY;
     startTime = Date.now();
-    // 横スクロール可能な領域内なら、スクロール操作と区別するため位置を記録
-    scrollEl = e.target.closest('.table-wrap, .rings-row');
+    scrollEl = e.target.closest(opts.hScroll);
     scrollLeft0 = scrollEl ? scrollEl.scrollLeft : 0;
   }, { passive: true });
 
@@ -615,8 +616,8 @@ function setupCalSwipe() {
     if (Date.now() - startTime > 600) return;               // ゆっくりした動きは無視
     if (Math.abs(dx) < 60) return;                          // 移動量が小さい
     if (Math.abs(dy) > Math.abs(dx) * 0.6) return;          // 縦方向の動きが強い＝縦スクロール
-    if (scrollEl && Math.abs(scrollEl.scrollLeft - scrollLeft0) > 2) return; // 表の横スクロールだった
-    changeMonth(dx < 0 ? 1 : -1);
+    if (scrollEl && Math.abs(scrollEl.scrollLeft - scrollLeft0) > 2) return; // 横スクロールだった
+    opts.onSwipe(dx < 0 ? 1 : -1);
   }, { passive: true });
 }
 
@@ -838,6 +839,11 @@ function refreshRings() {
 }
 
 // ── Annual ──
+function changeYear(delta) {
+  S.annualYear += delta;
+  renderAnnual();
+}
+
 function renderAnnual() {
   const el = document.getElementById('page-annual');
   const y = S.annualYear;
@@ -930,8 +936,8 @@ function renderAnnual() {
       <img class="vb-lb-img" id="vb-lb-img" alt="ビジョンボード拡大">
     </div>`;
 
-  document.getElementById('prev-y').onclick = () => { S.annualYear--; renderAnnual(); };
-  document.getElementById('next-y').onclick = () => { S.annualYear++; renderAnnual(); };
+  document.getElementById('prev-y').onclick = () => changeYear(-1);
+  document.getElementById('next-y').onclick = () => changeYear(1);
 
   setupTextBlock('year-goal', '今年の目標...', val => { S.yearGoals[y] = val; save(); });
   setupTextBlock('year-memo', '今年の振り返り...', val => { S.yearMemos[y] = val; save(); });
@@ -1492,7 +1498,18 @@ document.getElementById('overlay').addEventListener('click', e => {
   if (e.target.id === 'overlay') closeSettings();
 });
 document.getElementById('login-btn').onclick = login;
-setupCalSwipe();
+
+// スワイプでのページ送り：カレンダー＝月移動、年間＝年移動
+setupSwipeNav('page-calendar', {
+  exclude: 'textarea, input, .memo-edit-inner, .text-block-edit',
+  hScroll: '.table-wrap, .rings-row',
+  onSwipe: changeMonth,
+});
+setupSwipeNav('page-annual', {
+  exclude: 'textarea, input, .text-block-edit, .vb-lb',
+  hScroll: '.annual-wrap',
+  onSwipe: changeYear,
+});
 
 // 画面復帰時：「今日」の日付を更新し、他端末での変更を取り込んで再描画する
 document.addEventListener('visibilitychange', async () => {
