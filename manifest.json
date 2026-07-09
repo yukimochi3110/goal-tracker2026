@@ -1,0 +1,14 @@
+{
+  "name": "目標チェック",
+  "short_name": "目標チェック",
+  "description": "毎日の目標達成をチェックする習慣トラッカー",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#F2FAF5",
+  "theme_color": "#38AD6C",
+  "lang": "ja",
+  "icons": [
+    { "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "apple-touch-icon.png", "sizes": "180x180", "type": "image/png", "purpose": "any" }
+  ]
+}

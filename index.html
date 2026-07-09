@@ -6,6 +6,8 @@
 <title>目標チェック</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#38AD6C">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root { --bg: #F2FAF5; --surface: #FFFFFF; --text: #2C3C32; --text-sub: #82A08C; --border: #D4EAD9; --accent: #44B872; --accent-light: #E8F8EE; --g-from: #8ED4A8; --g-to: #38AD6C; --sun: #C84848; --sat: #4070C0; --wknd-bg: #FAF7F2; --shadow: 0 2px 14px rgba(30,80,50,0.07); --radius: 14px; --font: 'Noto Sans JP', sans-serif; }
@@ -282,7 +284,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 // ── Firebase SDK ──
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getAuth, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { getFirestore, doc, setDoc, getDoc, updateDoc, deleteField } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc, getDoc, updateDoc, deleteField, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyDx5MFk_Uhdg3skO1rGszAdS-1OY26hyv4",
@@ -295,7 +297,10 @@ const firebaseConfig = {
 const fbApp = initializeApp(firebaseConfig);
 const auth = getAuth(fbApp);
 await setPersistence(auth, browserLocalPersistence); // iOS Safari ITP対策：localStorageに永続化
-const db = getFirestore(fbApp);
+// オフライン永続キャッシュを有効化：電波がない場所でも操作でき、復帰時に自動同期される
+const db = initializeFirestore(fbApp, {
+  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+});
 const gProvider = new GoogleAuthProvider();
 let currentUser = null;
 
@@ -335,7 +340,7 @@ const SYM_NG = `<svg width="15" height="15" viewBox="0 0 15 15" fill="none" stro
 
 const FREQ_LABELS = { daily: '毎日', weekdays: '平日のみ', weekends: '土日のみ', monthly: '月1回' };
 const DOW = ['日','月','火','水','木','金','土'];
-const TODAY = new Date();
+let TODAY = new Date(); // 画面復帰時に更新される（開きっぱなしで日をまたいだ場合の対策）
 
 let S = {
   tab: 'calendar',
@@ -355,22 +360,41 @@ const DEFAULT_GOALS = [
   { id: 'g4', name: '副業',    icon: 'briefcase',  color: 'plum',  frequency: 'weekdays' },
 ];
 
+// 初回読み込みが成功するまで保存をブロックする。
+// 読み込み失敗のままチェックを付けると、save() の merge で goals（配列は丸ごと置換）が
+// デフォルト値で上書きされ、サーバー上の設定が失われるため。
+let dataLoaded = false;
+let saveErrorShown = false;
+
 async function save() {
-  if (!currentUser) return;
-  await setDoc(doc(db, 'users', currentUser.uid), {
-    goals: S.goals, checks: S.checks, memos: S.memos,
-    monthMemos: S.monthMemos, yearGoals: S.yearGoals,
-    yearMemos: S.yearMemos, bodyData: S.bodyData
-  }, { merge: true });
+  if (!currentUser || !dataLoaded) return;
+  try {
+    await setDoc(doc(db, 'users', currentUser.uid), {
+      goals: S.goals, checks: S.checks, memos: S.memos,
+      monthMemos: S.monthMemos, yearGoals: S.yearGoals,
+      yearMemos: S.yearMemos, bodyData: S.bodyData
+    }, { merge: true });
+  } catch(e) {
+    console.error('Firestore save error:', e);
+    if (!saveErrorShown) {
+      saveErrorShown = true;
+      alert('保存に失敗しました [' + (e.code || e.message) + ']');
+    }
+  }
 }
 
 async function loadFromFirestore() {
-  if (!currentUser) return;
+  if (!currentUser) return false;
   try {
     const snap = await getDoc(doc(db, 'users', currentUser.uid));
     if (snap.exists()) Object.assign(S, snap.data());
-  } catch(e) {}
-  if (!S.goals?.length) S.goals = JSON.parse(JSON.stringify(DEFAULT_GOALS));
+    if (!S.goals?.length) S.goals = JSON.parse(JSON.stringify(DEFAULT_GOALS));
+    dataLoaded = true;
+    return true;
+  } catch(e) {
+    console.error('Firestore load error:', e);
+    return false;
+  }
 }
 
 async function login() {
@@ -431,6 +455,8 @@ function renderMemoText(text, showName = true) {
 
 function calcAch(y, m, gid) {
   const g = S.goals.find(x => x.id === gid); if (!g) return null;
+  // 未来の月はまだ始まっていないので集計対象外（「−」表示）
+  if (y > TODAY.getFullYear() || (y === TODAY.getFullYear() && m > TODAY.getMonth() + 1)) return null;
   const days = daysInMonth(y, m);
   // 月1回: 月内のどこか1日でも○があれば100%
   if (g.frequency === 'monthly') {
@@ -550,6 +576,48 @@ function renderCalendar() {
   const el = document.getElementById('page-calendar');
   el.innerHTML = buildCalHTML();
   bindCalEvents();
+}
+
+function changeMonth(delta) {
+  S.month += delta;
+  if (S.month < 1) { S.month = 12; S.year--; }
+  if (S.month > 12) { S.month = 1; S.year++; }
+  S.openMemoDay = null;
+  renderCalendar();
+}
+
+// Swipe left/right on the calendar page to move between months.
+// Listeners live on #page-calendar itself so they survive innerHTML re-renders.
+function setupCalSwipe() {
+  const page = document.getElementById('page-calendar');
+  let startX = 0, startY = 0, startTime = 0, tracking = false;
+  let scrollEl = null, scrollLeft0 = 0;
+
+  page.addEventListener('touchstart', e => {
+    tracking = false;
+    if (e.touches.length !== 1) return;
+    // 入力中やメモ編集中は誤操作防止のため無効
+    if (e.target.closest('textarea, input, .memo-edit-inner, .text-block-edit')) return;
+    tracking = true;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    startTime = Date.now();
+    // 横スクロール可能な領域内なら、スクロール操作と区別するため位置を記録
+    scrollEl = e.target.closest('.table-wrap, .rings-row');
+    scrollLeft0 = scrollEl ? scrollEl.scrollLeft : 0;
+  }, { passive: true });
+
+  page.addEventListener('touchend', e => {
+    if (!tracking || e.touches.length > 0) return;
+    tracking = false;
+    const dx = e.changedTouches[0].clientX - startX;
+    const dy = e.changedTouches[0].clientY - startY;
+    if (Date.now() - startTime > 600) return;               // ゆっくりした動きは無視
+    if (Math.abs(dx) < 60) return;                          // 移動量が小さい
+    if (Math.abs(dy) > Math.abs(dx) * 0.6) return;          // 縦方向の動きが強い＝縦スクロール
+    if (scrollEl && Math.abs(scrollEl.scrollLeft - scrollLeft0) > 2) return; // 表の横スクロールだった
+    changeMonth(dx < 0 ? 1 : -1);
+  }, { passive: true });
 }
 
 function buildCalHTML() {
@@ -679,8 +747,8 @@ function buildCalHTML() {
 }
 
 function bindCalEvents() {
-  document.getElementById('prev-m').onclick = () => { S.month--; if (S.month<1){S.month=12;S.year--;} S.openMemoDay=null; renderCalendar(); };
-  document.getElementById('next-m').onclick = () => { S.month++; if (S.month>12){S.month=1;S.year++;} S.openMemoDay=null; renderCalendar(); };
+  document.getElementById('prev-m').onclick = () => changeMonth(-1);
+  document.getElementById('next-m').onclick = () => changeMonth(1);
 
   // Check buttons — click cycles: '' → '◯' → '×' → ''
   document.querySelectorAll('.check-btn').forEach(btn => {
@@ -896,14 +964,47 @@ function compressImage(file) {
   });
 }
 
-// メインドキュメント users/{uid} の visionBoards フィールドに merge で保存
+// サブコレクション users/{uid}/visionBoards/{year} に保存
+// （メインドキュメントに入れると画像2年分でFirestoreの1MB/doc制限を超えるため分離）
 async function saveVisionBoard(y, data) {
   if (!currentUser) return;
-  const ref = doc(db, 'users', currentUser.uid);
+  const ref = doc(db, 'users', currentUser.uid, 'visionBoards', String(y));
   if (data) {
-    await setDoc(ref, { visionBoards: { [y]: data } }, { merge: true });
+    await setDoc(ref, { data });
   } else {
-    await updateDoc(ref, { [`visionBoards.${y}`]: deleteField() });
+    await deleteDoc(ref);
+  }
+}
+
+// 旧形式（メインドキュメントの visionBoards フィールド）からの移行。
+// 移行済みならフィールドが存在しないので何もしない。
+async function migrateVisionBoards() {
+  if (!currentUser || !S.visionBoards) return;
+  const years = Object.keys(S.visionBoards).filter(k => S.visionBoards[k]);
+  if (!years.length) return;
+  try {
+    for (const yr of years) {
+      await setDoc(doc(db, 'users', currentUser.uid, 'visionBoards', String(yr)), { data: S.visionBoards[yr] });
+    }
+    await updateDoc(doc(db, 'users', currentUser.uid), { visionBoards: deleteField() });
+  } catch (e) {
+    console.error('visionBoard migration error:', e);
+  }
+}
+
+// 年のビジョンボードを取得（S.visionBoards をメモリキャッシュとして使用）
+async function fetchVisionBoard(y) {
+  if (!S.visionBoards) S.visionBoards = {};
+  if (y in S.visionBoards) return S.visionBoards[y];
+  if (!currentUser) return null;
+  try {
+    const snap = await getDoc(doc(db, 'users', currentUser.uid, 'visionBoards', String(y)));
+    const data = snap.exists() ? snap.data().data : null;
+    S.visionBoards[y] = data;
+    return data;
+  } catch (e) {
+    console.error('visionBoard fetch error:', e);
+    return null;
   }
 }
 
@@ -930,9 +1031,16 @@ function initVisionBoard(y) {
     elLoader.style.display = on ? '' : 'none';
   }
 
-  // S.visionBoards は loadFromFirestore() で既に読み込み済み
+  // キャッシュがあれば即表示、なければサブコレクションから非同期取得
   const cached = S.visionBoards && S.visionBoards[y];
-  if (cached) show(cached); else clear();
+  if (cached) show(cached);
+  else {
+    clear();
+    fetchVisionBoard(y).then(data => {
+      // 取得中に別の年へ移動していたら反映しない
+      if (data && S.annualYear === y) show(data);
+    });
+  }
 
   // ライトボックス
   const elLb      = document.getElementById('vb-lb');
@@ -1008,7 +1116,8 @@ function initVisionBoard(y) {
     setLoading(true);
     try {
       await saveVisionBoard(y, null);
-      if (S.visionBoards) delete S.visionBoards[y];
+      if (!S.visionBoards) S.visionBoards = {};
+      S.visionBoards[y] = null;
       clear();
     } catch(err) {
       console.error('visionBoard delete error:', err);
@@ -1124,10 +1233,15 @@ function renderBody() {
   </tr>`).join('');
 
   const curY = TODAY.getFullYear(), curM = TODAY.getMonth()+1, curD = TODAY.getDate();
-  let yOpts = '', mOpts = '', dOpts = '';
+  const dayOptsFor = (y, m, selD) => {
+    let s = '';
+    for (let i = 1; i <= daysInMonth(y, m); i++) s += `<option value="${pad(i)}"${i===selD?' selected':''}>${i}日</option>`;
+    return s;
+  };
+  let yOpts = '', mOpts = '';
   for (let i = curY-3; i <= curY+1; i++) yOpts += `<option value="${i}"${i===curY?' selected':''}>${i}年</option>`;
   for (let i = 1; i <= 12; i++) mOpts += `<option value="${pad(i)}"${i===curM?' selected':''}>${i}月</option>`;
-  for (let i = 1; i <= 31; i++) dOpts += `<option value="${pad(i)}"${i===curD?' selected':''}>${i}日</option>`;
+  const dOpts = dayOptsFor(curY, curM, curD);
 
   el.innerHTML = `
     <div class="body-form-card">
@@ -1152,6 +1266,17 @@ function renderBody() {
         <tbody>${tableRows||`<tr><td colspan="5" class="empty-msg">まだデータがありません</td></tr>`}</tbody>
       </table>
     </div>`;
+
+  // 年・月を変えたら日の選択肢をその月の実在日数に合わせる（2月31日などを防ぐ）
+  const refreshDayOpts = () => {
+    const y = +document.getElementById('by').value;
+    const m = +document.getElementById('bm').value;
+    const bd = document.getElementById('bd');
+    const sel = Math.min(+bd.value, daysInMonth(y, m));
+    bd.innerHTML = dayOptsFor(y, m, sel);
+  };
+  document.getElementById('by').onchange = refreshDayOpts;
+  document.getElementById('bm').onchange = refreshDayOpts;
 
   document.getElementById('body-save').onclick = () => {
     const y = document.getElementById('by').value;
@@ -1367,6 +1492,23 @@ document.getElementById('overlay').addEventListener('click', e => {
   if (e.target.id === 'overlay') closeSettings();
 });
 document.getElementById('login-btn').onclick = login;
+setupCalSwipe();
+
+// 画面復帰時：「今日」の日付を更新し、他端末での変更を取り込んで再描画する
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState !== 'visible' || !currentUser || !dataLoaded) return;
+  TODAY = new Date();
+  // 編集中・入力中に再描画すると内容が消えるためスキップ
+  const editing = document.querySelector('.text-block-edit.open, .memo-edit-row.open')
+    || document.getElementById('overlay').classList.contains('open');
+  const bodyDirty = ['bw', 'bf', 'ba'].some(id => {
+    const el = document.getElementById(id);
+    return el && el.value;
+  });
+  if (editing || bodyDirty) return;
+  await loadFromFirestore(); // 失敗しても手元の状態をそのまま使う
+  navigate(S.tab);
+});
 
 // リダイレクトログイン後の結果を受け取る（ポップアップがブロックされた場合のフォールバック）
 try {
@@ -1404,7 +1546,12 @@ onAuthStateChanged(auth, async user => {
       headerUser.querySelector('.user-avatar, .user-avatar-placeholder').addEventListener('click', logout);
     }
     // Load data and render
-    await loadFromFirestore();
+    const ok = await loadFromFirestore();
+    if (!ok) {
+      alert('データの読み込みに失敗しました。通信環境を確認してページを再読み込みしてください。\n（データ保護のため、読み込みできるまで保存は無効になります）');
+    } else {
+      migrateVisionBoards(); // 旧形式のビジョンボードがあれば移行（完了を待つ必要はない）
+    }
     renderCalendar();
   } else {
     // Show login, hide app
