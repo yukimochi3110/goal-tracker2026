@@ -10,8 +10,8 @@
 <meta name="theme-color" content="#38AD6C">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-:root { --bg: #F2FAF5; --surface: #FFFFFF; --text: #2C3C32; --text-sub: #82A08C; --border: #D4EAD9; --accent: #44B872; --accent-light: #E8F8EE; --g-from: #8ED4A8; --g-to: #38AD6C; --sun: #C84848; --sat: #4070C0; --wknd-bg: #FAF7F2; --shadow: 0 2px 14px rgba(30,80,50,0.07); --radius: 14px; --font: 'Noto Sans JP', sans-serif; }
-@media (prefers-color-scheme: dark) { :root { --bg: #161E18; --surface: #1E2A20; --text: #D4ECD8; --text-sub: #689A72; --border: #2A3C2E; --accent: #5CD48A; --accent-light: #1A2E1E; --g-from: #4A9060; --g-to: #287048; --sun: #D46868; --sat: #5090D0; --wknd-bg: #1C2218; --shadow: 0 2px 16px rgba(0,0,0,0.3); } }
+:root { --bg: #F2FAF5; --surface: #FFFFFF; --text: #2C3C32; --text-sub: #82A08C; --border: #D4EAD9; --accent: #44B872; --accent-light: #E8F8EE; --g-from: #8ED4A8; --g-to: #38AD6C; --sun: #C84848; --sat: #4070C0; --stop: #C04040; --wknd-bg: #FAF7F2; --shadow: 0 2px 14px rgba(30,80,50,0.07); --radius: 14px; --font: 'Noto Sans JP', sans-serif; }
+@media (prefers-color-scheme: dark) { :root { --bg: #161E18; --surface: #1E2A20; --text: #D4ECD8; --text-sub: #689A72; --border: #2A3C2E; --accent: #5CD48A; --accent-light: #1A2E1E; --g-from: #4A9060; --g-to: #287048; --sun: #D46868; --sat: #5090D0; --stop: #D46868; --wknd-bg: #1C2218; --shadow: 0 2px 16px rgba(0,0,0,0.3); } }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; }
 body { font-family: var(--font); background: var(--bg); color: var(--text); font-size: 16px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
@@ -184,6 +184,55 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 .del-btn:hover { background: #FEF0F0; }
 .empty-msg { text-align: center; padding: 36px 16px; color: var(--text-sub); font-size: 15px; }
 
+/* ── Time bucket ── */
+.tb-prog-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; margin-bottom: 16px; }
+.tb-prog-top { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.tb-prog-num { font-size: 28px; font-weight: 700; color: var(--accent); line-height: 1.1; }
+.tb-prog-sub { font-size: 12px; font-weight: 600; color: var(--text-sub); letter-spacing: 1px; text-transform: uppercase; margin-top: 3px; }
+.tb-prog-meta { font-size: 13px; color: var(--text-sub); text-align: right; line-height: 1.6; white-space: nowrap; }
+.tb-prog-bar { height: 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+.tb-prog-fill { height: 100%; background: linear-gradient(90deg, var(--g-from) 0%, var(--g-to) 100%); border-radius: 6px; transition: width 0.6s ease; }
+.tb-bucket { border-bottom: 1px solid var(--border); }
+.tb-bucket:last-child { border-bottom: none; }
+.tb-bucket-head { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: var(--bg); }
+.tb-bucket.now .tb-bucket-head { background: var(--accent-light); }
+.tb-bucket-age { font-size: 15px; font-weight: 700; color: var(--text); }
+.tb-bucket.now .tb-bucket-age { color: var(--accent); }
+.tb-now-badge { font-size: 11px; font-weight: 700; color: #fff; background: var(--accent); border-radius: 10px; padding: 1px 8px; }
+.tb-bucket-count { font-size: 12px; color: var(--text-sub); margin-left: auto; }
+.tb-add-here { background: none; border: 1px solid var(--border); border-radius: 8px; width: 27px; height: 27px; font-size: 16px; line-height: 1; color: var(--text-sub); cursor: pointer; font-family: var(--font); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: color 0.15s, border-color 0.15s; }
+.tb-add-here:hover { border-color: var(--accent); color: var(--accent); background: var(--surface); }
+.tb-item { display: flex; align-items: flex-start; gap: 10px; padding: 11px 14px; border-top: 1px solid var(--border); }
+.tb-status { background: none; border: none; padding: 1px 0 0; cursor: pointer; display: flex; flex-shrink: 0; transition: transform 0.1s; }
+.tb-status:active { transform: scale(0.85); }
+.tb-item-body { flex: 1; min-width: 0; }
+.tb-item-text { font-size: 16px; line-height: 1.5; word-break: break-word; }
+.tb-item-text.done { color: var(--text-sub); text-decoration: line-through; }
+.tb-item-text.stopped { color: var(--text-sub); }
+.tb-item-sub { font-size: 12px; color: var(--text-sub); margin-top: 2px; }
+.tb-item-edit { background: none; border: none; cursor: pointer; padding: 4px; color: var(--text-sub); border-radius: 6px; display: flex; flex-shrink: 0; }
+.tb-item-edit:hover { color: var(--accent); background: var(--accent-light); }
+.tb-edit-form { display: none; padding: 6px 14px 14px; border-top: 1px solid var(--border); background: var(--bg); }
+.tb-edit-form.open { display: block; }
+.tb-edit-form .text-input, .tb-edit-form .freq-sel { background: var(--surface); }
+.tb-edit-actions { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+.tb-del-btn { background: none; border: 1px solid #E0B0B0; color: #C04040; border-radius: 8px; padding: 9px 13px; font-size: 15px; font-family: var(--font); cursor: pointer; }
+.tb-del-btn:hover { background: #FEF0F0; }
+.tb-cancel-btn { background: var(--surface); color: var(--text-sub); border: 1px solid var(--border); border-radius: 8px; padding: 9px 13px; font-size: 15px; font-family: var(--font); cursor: pointer; }
+.tb-save-btn { background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 10px 18px; font-size: 15px; font-weight: 600; font-family: var(--font); cursor: pointer; transition: opacity 0.2s; }
+.tb-save-btn:hover { opacity: 0.88; }
+.tb-cfg-preview { font-size: 13px; color: var(--text-sub); line-height: 1.7; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 9px 11px; margin-bottom: 14px; word-break: break-word; }
+.tb-buckets { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+
+/* バケットタブのみ、PCでは横幅いっぱいに広げて年代を複数列で並べる */
+#app.wide { max-width: 100%; }
+@media (min-width: 900px) {
+  #app.wide .tb-top { display: flex; align-items: flex-start; gap: 16px; }
+  #app.wide .tb-top > * { flex: 1; min-width: 0; }
+  #app.wide .tb-buckets { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; align-items: start; background: none; box-shadow: none; border-radius: 0; overflow: visible; }
+  #app.wide .tb-buckets .tb-bucket { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); border-bottom: none; overflow: hidden; }
+}
+
 /* ── Settings Modal ── */
 .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; display: none; align-items: flex-end; justify-content: center; }
 .overlay.open { display: flex; }
@@ -267,11 +316,13 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
     <button class="tab-btn active" data-page="calendar">カレンダー</button>
     <button class="tab-btn" data-page="annual">年間</button>
     <button class="tab-btn" data-page="body">体組成</button>
+    <button class="tab-btn" data-page="bucket">バケット</button>
   </nav>
 
   <div id="page-calendar" class="page active"></div>
   <div id="page-annual" class="page"></div>
   <div id="page-body" class="page"></div>
+  <div id="page-bucket" class="page"></div>
 </div>
 
 <div class="overlay" id="overlay">
@@ -338,6 +389,17 @@ const ICON_KEYS = ['book','laptop','run','home','pen','briefcase','smile','sunri
 const SYM_OK = `<svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="7.5" cy="7.5" r="5.5"/></svg>`;
 const SYM_NG = `<svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="3" x2="12" y2="12"/><line x1="12" y1="3" x2="3" y2="12"/></svg>`;
 
+// タイムバケットの状態表示（絵文字は使わずSVGで統一）
+const TB_STATUS = { active: '進行中', done: '達成', stopped: '中止' };
+const TB_COLOR  = { active: 'var(--text-sub)', done: 'var(--accent)', stopped: 'var(--stop)' };
+const TB_SYM = {
+  active:  `<svg width="21" height="21" viewBox="0 0 21 21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="7.5"/></svg>`,
+  done:    `<svg width="21" height="21" viewBox="0 0 21 21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="7.5"/><polyline points="6.8,10.7 9.4,13.2 14.2,8.1"/></svg>`,
+  stopped: `<svg width="21" height="21" viewBox="0 0 21 21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="7.5"/><line x1="7.4" y1="7.4" x2="13.6" y2="13.6"/><line x1="13.6" y1="7.4" x2="7.4" y2="13.6"/></svg>`,
+};
+const SYM_PENCIL = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+const DEFAULT_BUCKET_CFG = { birthYear: 1984, startAge: 36, step: 5, endAge: 90 };
+
 const FREQ_LABELS = { daily: '毎日', weekdays: '平日のみ', weekends: '土日のみ', monthly: '月1回' };
 const DOW = ['日','月','火','水','木','金','土'];
 let TODAY = new Date(); // 画面復帰時に更新される（開きっぱなしで日をまたいだ場合の対策）
@@ -349,6 +411,10 @@ let S = {
   goals: [], checks: {}, memos: {}, monthMemos: {},
   yearGoals: {}, yearMemos: {}, bodyData: {},
   visionBoards: {},  // { [year]: base64string | null }
+  // タイムバケット: 年代は age（そのバケットの開始年齢）で保持する。
+  // 刻みを変えても age はそのまま残るので、項目が消えずに該当バケットへ移る。
+  buckets: [],       // [{ id, text, age: number|null, status, doneAge: number|null, createdAt }]
+  bucketCfg: null,   // { birthYear, startAge, step, endAge }
   newIcon: 'book', newColor: 'moss',
   openMemoDay: null,
 };
@@ -372,7 +438,8 @@ async function save() {
     await setDoc(doc(db, 'users', currentUser.uid), {
       goals: S.goals, checks: S.checks, memos: S.memos,
       monthMemos: S.monthMemos, yearGoals: S.yearGoals,
-      yearMemos: S.yearMemos, bodyData: S.bodyData
+      yearMemos: S.yearMemos, bodyData: S.bodyData,
+      buckets: S.buckets, bucketCfg: tbCfg()
     }, { merge: true });
   } catch(e) {
     console.error('Firestore save error:', e);
@@ -389,6 +456,7 @@ async function loadFromFirestore() {
     const snap = await getDoc(doc(db, 'users', currentUser.uid));
     if (snap.exists()) Object.assign(S, snap.data());
     if (!S.goals?.length) S.goals = JSON.parse(JSON.stringify(DEFAULT_GOALS));
+    if (!Array.isArray(S.buckets)) S.buckets = [];
     dataLoaded = true;
     return true;
   } catch(e) {
@@ -528,9 +596,16 @@ function navigate(tab) {
   S.tab = tab;
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.page === tab));
   document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-' + tab));
+  document.getElementById('app').classList.toggle('wide', tab === 'bucket');  // バケットのみ横幅いっぱい
   if (tab === 'calendar') renderCalendar();
   if (tab === 'annual') renderAnnual();
   if (tab === 'body') renderBody();
+  if (tab === 'bucket') renderBucket();
+}
+
+// HTML本文・属性値の両方で使えるエスケープ
+function esc(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 // ── Text block helper (view/edit toggle) ──
@@ -1299,6 +1374,304 @@ function renderBody() {
   });
 }
 
+// ── Time bucket ───────────────────────────────────────────────────────────
+// 設定値を安全な数値に正規化して返す（壊れた値でも描画が壊れないようにする）
+function tbCfg() {
+  const c = S.bucketCfg || {};
+  const num = (v, fb) => {
+    const n = Math.floor(+v);
+    return (v !== null && v !== '' && Number.isFinite(n)) ? n : fb;
+  };
+  const cfg = {
+    birthYear: num(c.birthYear, DEFAULT_BUCKET_CFG.birthYear),
+    startAge:  num(c.startAge,  DEFAULT_BUCKET_CFG.startAge),
+    step:      num(c.step,      DEFAULT_BUCKET_CFG.step),
+    endAge:    num(c.endAge,    DEFAULT_BUCKET_CFG.endAge),
+  };
+  if (cfg.step < 1) cfg.step = DEFAULT_BUCKET_CFG.step;   // 0以下だと無限ループになる
+  if (cfg.endAge < cfg.startAge) cfg.endAge = cfg.startAge;
+  return cfg;
+}
+
+function tbMakeRanges(startAge, step, endAge) {
+  const out = [];
+  for (let a = startAge; a <= endAge && out.length < 60; a += step) {
+    out.push({ start: a, end: Math.min(a + step - 1, endAge) });
+  }
+  return out;
+}
+
+function tbRanges() { const c = tbCfg(); return tbMakeRanges(c.startAge, c.step, c.endAge); }
+function tbLabel(r) { return r.start === r.end ? `${r.start}歳` : `${r.start}-${r.end}歳`; }
+function tbAge() { return TODAY.getFullYear() - tbCfg().birthYear; }
+
+// 項目を年代ごとに振り分ける。範囲外・未設定はそれぞれ別枠にまとめる
+function tbGroups() {
+  const groups = tbRanges().map(r => ({ ...r, items: [] }));
+  const outRange = [], unset = [];
+  const items = [...(S.buckets || [])].sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+  items.forEach(it => {
+    if (!Number.isFinite(it.age)) { unset.push(it); return; }
+    const g = groups.find(r => it.age >= r.start && it.age <= r.end);
+    (g ? g.items : outRange).push(it);
+  });
+  return { groups, outRange, unset };
+}
+
+function tbAgeOptions(selAge) {
+  const ranges = tbRanges();
+  const inRange = Number.isFinite(selAge) && ranges.some(r => selAge >= r.start && selAge <= r.end);
+  let opts = ranges.map(r => {
+    const sel = Number.isFinite(selAge) && selAge >= r.start && selAge <= r.end;
+    return `<option value="${r.start}"${sel ? ' selected' : ''}>${tbLabel(r)}</option>`;
+  }).join('');
+  // 設定範囲を狭めた後の項目：元の年齢を選択肢に残し、勝手に別の年代へ移さない
+  if (Number.isFinite(selAge) && !inRange) opts += `<option value="${selAge}" selected>${selAge}歳（範囲外）</option>`;
+  opts += `<option value=""${Number.isFinite(selAge) ? '' : ' selected'}>未設定</option>`;
+  return opts;
+}
+
+function tbItemHTML(it) {
+  const st = TB_STATUS[it.status] ? it.status : 'active';
+  const sub = st === 'done' ? (Number.isFinite(it.doneAge) ? `${it.doneAge}歳で達成` : '達成')
+            : st === 'stopped' ? '中止' : '';
+  const stOpts = Object.keys(TB_STATUS)
+    .map(k => `<option value="${k}"${k === st ? ' selected' : ''}>${TB_STATUS[k]}</option>`).join('');
+  return `<div class="tb-item-wrap">
+    <div class="tb-item">
+      <button class="tb-status" data-id="${esc(it.id)}" style="color:${TB_COLOR[st]}" title="${TB_STATUS[st]}（タップで切替）">${TB_SYM[st]}</button>
+      <div class="tb-item-body">
+        <div class="tb-item-text ${st}">${esc(it.text)}</div>
+        ${sub ? `<div class="tb-item-sub">${sub}</div>` : ''}
+      </div>
+      <button class="tb-item-edit" data-id="${esc(it.id)}" title="編集">${SYM_PENCIL}</button>
+    </div>
+    <div class="tb-edit-form" id="tb-edit-${esc(it.id)}">
+      <span class="field-lbl">やりたいこと</span>
+      <input class="text-input" id="tb-e-text-${esc(it.id)}" type="text" value="${esc(it.text)}">
+      <span class="field-lbl">年代</span>
+      <select class="freq-sel" id="tb-e-age-${esc(it.id)}">${tbAgeOptions(it.age)}</select>
+      <span class="field-lbl">状態</span>
+      <select class="freq-sel" id="tb-e-st-${esc(it.id)}">${stOpts}</select>
+      <div id="tb-e-donewrap-${esc(it.id)}"${st === 'done' ? '' : ' style="display:none"'}>
+        <span class="field-lbl">達成した年齢</span>
+        <input class="text-input" id="tb-e-done-${esc(it.id)}" type="number" value="${Number.isFinite(it.doneAge) ? it.doneAge : ''}" placeholder="${tbAge()}">
+      </div>
+      <div class="tb-edit-actions">
+        <button class="tb-del-btn" data-id="${esc(it.id)}">削除</button>
+        <span style="flex:1"></span>
+        <button class="tb-cancel-btn" data-id="${esc(it.id)}">キャンセル</button>
+        <button class="tb-save-btn" data-id="${esc(it.id)}">保存する</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderBucket() {
+  const el = document.getElementById('page-bucket');
+  // 再描画で入力途中の内容が消えないように退避する
+  const prevText = document.getElementById('tb-new-text')?.value ?? '';
+  const prevAge  = document.getElementById('tb-new-age')?.value;
+
+  const items = S.buckets || [];
+  const age = tbAge();
+  const { groups, outRange, unset } = tbGroups();
+  const doneN = items.filter(i => i.status === 'done').length;
+  const stopN = items.filter(i => i.status === 'stopped').length;
+  const denom = items.length - stopN;   // 中止は分母に入れない
+  const pct = denom > 0 ? Math.round(doneN / denom * 100) : 0;
+  const nowG = groups.find(g => age >= g.start && age <= g.end);
+
+  const extraSection = (title, list) => list.length ? `<div class="tb-bucket">
+      <div class="tb-bucket-head">
+        <span class="tb-bucket-age">${title}</span>
+        <span class="tb-bucket-count">${list.length}件</span>
+      </div>
+      ${list.map(tbItemHTML).join('')}
+    </div>` : '';
+
+  const bucketHTML = groups.map(g => {
+    const isNow = nowG && g.start === nowG.start;
+    return `<div class="tb-bucket${isNow ? ' now' : ''}">
+      <div class="tb-bucket-head">
+        <span class="tb-bucket-age">${tbLabel(g)}</span>
+        ${isNow ? '<span class="tb-now-badge">いま</span>' : ''}
+        <span class="tb-bucket-count">${g.items.length ? g.items.length + '件' : ''}</span>
+        <button class="tb-add-here" data-age="${g.start}" title="この年代に追加">＋</button>
+      </div>
+      ${g.items.map(tbItemHTML).join('')}
+    </div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="tb-top">
+    <div class="tb-prog-card">
+      <div class="tb-prog-top">
+        <div>
+          <div class="tb-prog-num">${pct}%</div>
+          <div class="tb-prog-sub">達成率</div>
+        </div>
+        <div class="tb-prog-meta">
+          ${items.length ? `${doneN} / ${denom} 件 達成${stopN ? `<br>中止 ${stopN}件` : ''}` : 'まだ登録がありません'}<br>
+          いま ${age}歳${nowG ? `・${tbLabel(nowG)}` : ''}
+        </div>
+      </div>
+      <div class="tb-prog-bar"><div class="tb-prog-fill" style="width:${pct}%"></div></div>
+    </div>
+
+    <div class="body-form-card">
+      <span class="field-lbl">やりたいこと</span>
+      <input class="text-input" id="tb-new-text" type="text" placeholder="例：オーロラを見に行く">
+      <span class="field-lbl">年代</span>
+      <select class="freq-sel" id="tb-new-age">${tbAgeOptions(nowG ? nowG.start : null)}</select>
+      <button class="submit-btn" id="tb-add">追加する</button>
+    </div>
+    </div>
+
+    <div class="tb-buckets">
+      ${bucketHTML}
+      ${extraSection('範囲外', outRange)}
+      ${extraSection('未設定', unset)}
+    </div>`;
+
+  const ti = el.querySelector('#tb-new-text');
+  if (ti) ti.value = prevText;
+  const ai = el.querySelector('#tb-new-age');
+  if (ai && prevAge !== undefined && [...ai.options].some(o => o.value === prevAge)) ai.value = prevAge;
+
+  bindBucketEvents();
+}
+
+function bindBucketEvents() {
+  const page = document.getElementById('page-bucket');
+
+  page.querySelector('#tb-add').onclick = () => {
+    const input = page.querySelector('#tb-new-text');
+    const text = input.value.trim();
+    if (!text) { alert('やりたいことを入力してください'); input.focus(); return; }
+    const ageVal = page.querySelector('#tb-new-age').value;
+    if (!Array.isArray(S.buckets)) S.buckets = [];
+    S.buckets.push({
+      id: 'tb' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      text,
+      age: ageVal === '' ? null : +ageVal,
+      status: 'active',
+      doneAge: null,
+      createdAt: Date.now(),
+    });
+    input.value = '';   // 退避処理に拾われないよう先に消す
+    save(); renderBucket();
+  };
+
+  page.querySelector('#tb-new-text').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); page.querySelector('#tb-add').click(); }
+  });
+
+  // 見出しの「＋」：その年代を選んだ状態で入力欄へ移動する
+  page.querySelectorAll('.tb-add-here').forEach(btn => {
+    btn.onclick = () => {
+      page.querySelector('#tb-new-age').value = btn.dataset.age;
+      const input = page.querySelector('#tb-new-text');
+      input.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      input.focus();
+    };
+  });
+
+  // 状態アイコン：進行中 → 達成 → 中止 → 進行中
+  page.querySelectorAll('.tb-status').forEach(btn => {
+    btn.onclick = () => {
+      const it = (S.buckets || []).find(x => x.id === btn.dataset.id);
+      if (!it) return;
+      const order = ['active', 'done', 'stopped'];
+      const cur = order.indexOf(TB_STATUS[it.status] ? it.status : 'active');
+      it.status = order[(cur + 1) % order.length];
+      // 達成にした時は今の年齢を初期値として入れる（編集画面で変更できる）
+      if (it.status === 'done') { if (!Number.isFinite(it.doneAge)) it.doneAge = tbAge(); }
+      else it.doneAge = null;
+      save(); renderBucket();
+    };
+  });
+
+  page.querySelectorAll('.tb-item-edit').forEach(btn => {
+    btn.onclick = () => {
+      const form = document.getElementById('tb-edit-' + btn.dataset.id);
+      const wasOpen = form.classList.contains('open');
+      page.querySelectorAll('.tb-edit-form').forEach(f => f.classList.remove('open'));
+      if (!wasOpen) {
+        form.classList.add('open');
+        form.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+    };
+  });
+
+  // 「達成」を選んだ時だけ達成年齢の欄を出す
+  page.querySelectorAll('[id^="tb-e-st-"]').forEach(sel => {
+    sel.onchange = () => {
+      const wrap = document.getElementById('tb-e-donewrap-' + sel.id.replace('tb-e-st-', ''));
+      if (wrap) wrap.style.display = sel.value === 'done' ? '' : 'none';
+    };
+  });
+
+  page.querySelectorAll('.tb-cancel-btn').forEach(btn => {
+    btn.onclick = () => document.getElementById('tb-edit-' + btn.dataset.id).classList.remove('open');
+  });
+
+  page.querySelectorAll('.tb-save-btn').forEach(btn => {
+    btn.onclick = () => {
+      const id = btn.dataset.id;
+      const it = (S.buckets || []).find(x => x.id === id);
+      if (!it) return;
+      const text = document.getElementById('tb-e-text-' + id).value.trim();
+      if (!text) { alert('やりたいことを入力してください'); return; }
+      const ageVal  = document.getElementById('tb-e-age-' + id).value;
+      const st      = document.getElementById('tb-e-st-' + id).value;
+      const doneVal = document.getElementById('tb-e-done-' + id).value;
+      it.text = text;
+      it.age = ageVal === '' ? null : +ageVal;
+      it.status = TB_STATUS[st] ? st : 'active';
+      it.doneAge = it.status === 'done' ? (doneVal === '' ? tbAge() : Math.floor(+doneVal)) : null;
+      save(); renderBucket();
+    };
+  });
+
+  page.querySelectorAll('.tb-del-btn').forEach(btn => {
+    btn.onclick = () => {
+      const it = (S.buckets || []).find(x => x.id === btn.dataset.id);
+      if (!it) return;
+      if (!confirm(`「${it.text}」を削除しますか？`)) return;
+      S.buckets = S.buckets.filter(x => x.id !== btn.dataset.id);
+      save(); renderBucket();
+    };
+  });
+}
+
+// 設定画面の入力値を検証する。問題なければ空文字を返す
+function tbCfgError(birth, start, step, end) {
+  const thisYear = TODAY.getFullYear();
+  if (!Number.isFinite(birth) || birth < 1900 || birth > thisYear) return `生まれ年は1900〜${thisYear}で入力してください`;
+  if (!Number.isFinite(start) || start < 0 || start > 120) return '開始年齢は0〜120で入力してください';
+  if (!Number.isFinite(step) || step < 1 || step > 30) return '刻みは1〜30で入力してください';
+  if (!Number.isFinite(end) || end > 120) return '終了年齢は120以下で入力してください';
+  if (end < start) return '終了年齢は開始年齢以上にしてください';
+  if (Math.floor((end - start) / step) + 1 > 40) return '区分が多すぎます。刻みを大きくしてください';
+  return '';
+}
+
+function tbCfgInputs() {
+  const v = id => Math.floor(+document.getElementById(id).value);
+  return { birth: v('tb-cfg-birth'), start: v('tb-cfg-start'), step: v('tb-cfg-step'), end: v('tb-cfg-end') };
+}
+
+function tbCfgPreview() {
+  const el = document.getElementById('tb-cfg-preview');
+  if (!el) return;
+  const { birth, start, step, end } = tbCfgInputs();
+  const err = tbCfgError(birth, start, step, end);
+  if (err) { el.innerHTML = `<span style="color:var(--stop)">${err}</span>`; return; }
+  const ranges = tbMakeRanges(start, step, end);
+  el.textContent = `${ranges.map(tbLabel).join(' / ')}（${ranges.length}区分・いま${TODAY.getFullYear() - birth}歳）`;
+}
+
 // ── Settings ──
 function openSettings() { document.getElementById('overlay').classList.add('open'); renderSettings(); }
 function closeSettings() { document.getElementById('overlay').classList.remove('open'); }
@@ -1380,6 +1753,18 @@ function renderSettings() {
         <option value="monthly">月1回</option>
       </select>
       <button class="add-goal-btn" id="add-goal">追加する</button>
+    </div>
+    <div class="add-section">
+      <div class="add-h">タイムバケットの設定</div>
+      <span class="field-lbl">生まれ年（西暦）</span>
+      <input class="text-input" id="tb-cfg-birth" type="number" value="${tbCfg().birthYear}">
+      <div class="form-grid">
+        <div class="form-group"><label class="form-label">開始年齢</label><input class="form-input" id="tb-cfg-start" type="number" value="${tbCfg().startAge}"></div>
+        <div class="form-group"><label class="form-label">刻み（年）</label><input class="form-input" id="tb-cfg-step" type="number" value="${tbCfg().step}"></div>
+        <div class="form-group"><label class="form-label">終了年齢</label><input class="form-input" id="tb-cfg-end" type="number" value="${tbCfg().endAge}"></div>
+      </div>
+      <div class="tb-cfg-preview" id="tb-cfg-preview"></div>
+      <button class="add-goal-btn" id="tb-cfg-save">設定を保存</button>
     </div>
     <div class="logout-row">
       <button class="logout-btn" id="logout-btn">ログアウト</button>
@@ -1484,6 +1869,24 @@ function renderSettings() {
     if (S.tab === 'calendar') renderCalendar();
   };
 
+  // タイムバケットの設定：入力するたびに区分のプレビューを更新する
+  ['tb-cfg-birth', 'tb-cfg-start', 'tb-cfg-step', 'tb-cfg-end'].forEach(id => {
+    modal.querySelector('#' + id).oninput = tbCfgPreview;
+  });
+  tbCfgPreview();
+
+  modal.querySelector('#tb-cfg-save').onclick = () => {
+    const { birth, start, step, end } = tbCfgInputs();
+    const err = tbCfgError(birth, start, step, end);
+    if (err) { alert(err); return; }
+    S.bucketCfg = { birthYear: birth, startAge: start, step, endAge: end };
+    save();
+    const btn = modal.querySelector('#tb-cfg-save');
+    btn.textContent = '保存しました';
+    setTimeout(() => { if (btn.isConnected) btn.textContent = '設定を保存'; }, 1600);
+    if (S.tab === 'bucket') renderBucket();
+  };
+
   modal.querySelector('#logout-btn').onclick = () => { closeSettings(); logout(); };
 
 }
@@ -1516,9 +1919,9 @@ document.addEventListener('visibilitychange', async () => {
   if (document.visibilityState !== 'visible' || !currentUser || !dataLoaded) return;
   TODAY = new Date();
   // 編集中・入力中に再描画すると内容が消えるためスキップ
-  const editing = document.querySelector('.text-block-edit.open, .memo-edit-row.open')
+  const editing = document.querySelector('.text-block-edit.open, .memo-edit-row.open, .tb-edit-form.open')
     || document.getElementById('overlay').classList.contains('open');
-  const bodyDirty = ['bw', 'bf', 'ba'].some(id => {
+  const bodyDirty = ['bw', 'bf', 'ba', 'tb-new-text'].some(id => {
     const el = document.getElementById(id);
     return el && el.value;
   });
