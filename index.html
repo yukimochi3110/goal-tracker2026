@@ -291,7 +291,15 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 <!-- Login screen -->
 <div id="login-screen">
   <div class="login-logo">
-    <div class="login-logo-icon" id="login-logo-icon"></div>
+    <div class="login-logo-icon">
+      <!-- 芽のアイコンは外部読み込みに頼らずHTMLに直接埋め込む（通信が遅い/失敗しても必ず表示される） -->
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.95)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 10C18 10 12 14 12 21"/>
+        <path d="M9.34882 11.1825C7.73784 12.3891 5.44323 12.26 3.9785 10.7953C1.55484 8.37164 2.03957 3.03957 2.03957 3.03957C2.03957 3.03957 7.37164 2.55484 9.7953 4.9785C10.7548 5.93803 11.1412 7.25369 10.9543 8.5"/>
+        <path d="M14.9638 12.8175C13.644 11.3832 13.6797 9.14983 15.0708 7.75867C17.2252 5.6043 21.9648 6.03517 21.9648 6.03517C21.9648 6.03517 22.3957 10.7748 20.2413 12.9292C19.4877 13.6828 18.487 14.0386 17.5 13.9967"/>
+        <path d="M6 7C6 7 12 12 12 21"/>
+      </svg>
+    </div>
   </div>
   <div class="login-title">目標チェック</div>
   <div class="login-sub">Googleアカウントでログインすると、PC・スマホどちらからでもデータが同期されます。</div>
@@ -303,7 +311,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 
 <div id="app" style="display:none">
   <header class="header">
-    <span class="header-title"><span id="header-sprout-icon" style="display:inline-flex;align-items:center"></span>目標チェック</span>
+    <span class="header-title"><span style="display:inline-flex;align-items:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.95)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10C18 10 12 14 12 21"/><path d="M9.34882 11.1825C7.73784 12.3891 5.44323 12.26 3.9785 10.7953C1.55484 8.37164 2.03957 3.03957 2.03957 3.03957C2.03957 3.03957 7.37164 2.55484 9.7953 4.9785C10.7548 5.93803 11.1412 7.25369 10.9543 8.5"/><path d="M14.9638 12.8175C13.644 11.3832 13.6797 9.14983 15.0708 7.75867C17.2252 5.6043 21.9648 6.03517 21.9648 6.03517C21.9648 6.03517 22.3957 10.7748 20.2413 12.9292C19.4877 13.6828 18.487 14.0386 17.5 13.9967"/><path d="M6 7C6 7 12 12 12 21"/></svg></span>目標チェック</span>
     <div class="header-right">
       <span id="header-user"></span>
       <button class="settings-btn" id="settings-btn">
@@ -355,13 +363,6 @@ const db = initializeFirestore(fbApp, {
 const gProvider = new GoogleAuthProvider();
 let currentUser = null;
 
-// ── Hugeicons from esm.sh ──
-const {
-  BookOpen01Icon, LaptopIcon, WorkoutRunIcon,
-  Home01Icon, PencilEdit01Icon, Briefcase01Icon,
-  SmileIcon, SunriseIcon, Sprout
-} = await import('https://esm.sh/@hugeicons/core-free-icons@4.1.1');
-
 const COLORS = {
   moss:  { primary: '#3CB06A', light: '#E4F7EC', mid: '#80D4A0', accent: '#228A4C' },
   coral: { primary: '#E07060', light: '#FFF0EE', mid: '#F0A898', accent: '#C05040' },
@@ -371,18 +372,29 @@ const COLORS = {
   slate: { primary: '#5898C0', light: '#E4EFF8', mid: '#88B8D8', accent: '#3870A0' },
 };
 
-// ── Hugeicons icon data (imported above) ──
-const ICONS = {
-  book:      BookOpen01Icon,
-  laptop:    LaptopIcon,
-  run:       WorkoutRunIcon,
-  home:      Home01Icon,
-  pen:       PencilEdit01Icon,
-  briefcase: Briefcase01Icon,
-  smile:     SmileIcon,
-  sunrise:   SunriseIcon,
-  plant:     Sprout,        // header seedling icon
-};
+// ── Hugeicons icon data ──
+// 外部（esm.sh）から後で読み込んで埋める。読み込みを待たずにアプリを起動させるため空で始める。
+// 未読み込み・読み込み失敗時は ico() が空のSVGを返すので、表示が崩れるだけで操作は止まらない。
+const ICONS = {};
+
+function loadIcons() {
+  import('https://esm.sh/@hugeicons/core-free-icons@4.1.1').then(lib => {
+    Object.assign(ICONS, {
+      book:      lib.BookOpen01Icon,
+      laptop:    lib.LaptopIcon,
+      run:       lib.WorkoutRunIcon,
+      home:      lib.Home01Icon,
+      pen:       lib.PencilEdit01Icon,
+      briefcase: lib.Briefcase01Icon,
+      smile:     lib.SmileIcon,
+      sunrise:   lib.SunriseIcon,
+      plant:     lib.Sprout,
+    });
+    if (currentUser && dataLoaded) navigate(S.tab);   // 読み込めたアイコンを描画に反映する
+  }).catch(e => {
+    console.warn('アイコンの読み込みに失敗しました（アプリはそのまま使えます）:', e);
+  });
+}
 const ICON_KEYS = ['book','laptop','run','home','pen','briefcase','smile','sunrise'];
 
 // SVG symbols for check states (equal stroke weight)
@@ -1940,13 +1952,9 @@ try {
   }
 }
 
-// Set login screen logo icon (rendered after ico() is defined, via init below)
-const loginLogoEl = document.getElementById('login-logo-icon');
-if (loginLogoEl) loginLogoEl.innerHTML = ico('plant', 28, 'rgba(255,255,255,0.95)');
-
-// Set header sprout icon
-const headerSprout = document.getElementById('header-sprout-icon');
-if (headerSprout) headerSprout.innerHTML = ico('plant', 20, 'rgba(255,255,255,0.95)');
+// アイコンライブラリの読み込みを開始する。await しないので、
+// 通信が遅い・失敗する場合でもログインボタンや画面の操作はブロックされない。
+loadIcons();
 
 onAuthStateChanged(auth, async user => {
   currentUser = user;
