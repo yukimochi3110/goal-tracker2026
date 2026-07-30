@@ -289,6 +289,15 @@ PC・スマホの両方からブラウザでアクセスし、データはFireba
 
 意味を持つ色（目標カラー6色、達成率チップの緑/黄/赤、日曜赤・土曜青）は無彩色化せず維持する。
 
+### カードの質感
+- カードは**影を使わず、`--border` のヘアライン1本＋角丸 `--radius`（12px）**で表す
+  （対象: `.card` `.section-block` `.annual-wrap` `.vb-card` `.body-form-card` `.chart-card` `.data-card`、
+  およびバケットの `.tb-bucket` `.tb-prog-card`）
+- 影を使うのは以下だけに限定する
+  - 緑のグラデーションを持つもの（ヘッダー、送信ボタン、追加ボタン、ログインボタン）＝アプリの主役
+  - 浮いている要素（ドラッグ中のカード、中央のモーダル、ライトボックス）
+- `--shadow` 変数はログインボタンでのみ使用
+
 ### タイポグラフィ
 - フォント: Noto Sans JP（Google Fonts）
 - アプリ名: 15px, 700, letter-spacing: 3px, uppercase

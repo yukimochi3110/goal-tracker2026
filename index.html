@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#38AD6C">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-:root { --bg: #F4F6F4; --surface: #FFFFFF; --text: #2C3C32; --text-sub: #82A08C; --border: #E4E8E5; --accent: #44B872; --accent-light: #E8F8EE; --g-from: #8ED4A8; --g-to: #38AD6C; --sun: #C84848; --sat: #4070C0; --stop: #C04040; --tb-head-bg: #F1F4F2; --tb-head-tx: #5C6B60; --tb-empty-tx: #A6B0A9; --tb-now-tx: #228A4C; --tb-done-bg: #FFFCF1; --tb-done-bar: #DFAE38; --tb-done-tx: #DFAE38; --tb-stop-bg: #F8F9F8; --tb-stop-bar: #C3CBC5; --tb-stop-ic: #A9B3AB; --shadow: 0 2px 14px rgba(30,80,50,0.07); --radius: 14px; --font: 'Noto Sans JP', sans-serif; }
+:root { --bg: #F4F6F4; --surface: #FFFFFF; --text: #2C3C32; --text-sub: #82A08C; --border: #E4E8E5; --accent: #44B872; --accent-light: #E8F8EE; --g-from: #8ED4A8; --g-to: #38AD6C; --sun: #C84848; --sat: #4070C0; --stop: #C04040; --tb-head-bg: #F1F4F2; --tb-head-tx: #5C6B60; --tb-empty-tx: #A6B0A9; --tb-now-tx: #228A4C; --tb-done-bg: #FFFCF1; --tb-done-bar: #DFAE38; --tb-done-tx: #DFAE38; --tb-stop-bg: #F8F9F8; --tb-stop-bar: #C3CBC5; --tb-stop-ic: #A9B3AB; --shadow: 0 2px 14px rgba(30,80,50,0.07); --radius: 12px; --font: 'Noto Sans JP', sans-serif; }
 @media (prefers-color-scheme: dark) { :root { --bg: #131714; --surface: #1E2A20; --text: #D4ECD8; --text-sub: #689A72; --border: #2A332C; --accent: #5CD48A; --accent-light: #1A2E1E; --g-from: #4A9060; --g-to: #287048; --sun: #D46868; --sat: #5090D0; --stop: #D46868; --tb-head-bg: #1E2520; --tb-head-tx: #8A998E; --tb-empty-tx: #6E7C71; --tb-now-tx: #8AE3AD; --tb-done-bg: #241F12; --tb-done-bar: #C79A2E; --tb-done-tx: #E0BE55; --tb-stop-bg: #1C201D; --tb-stop-bar: #4A544C; --tb-stop-ic: #6E7C71; --shadow: 0 2px 16px rgba(0,0,0,0.3); } }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; }
@@ -35,7 +35,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 .page.active { display: block; }
 
 /* ── Cards ── */
-.card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; margin-bottom: 16px; }
+.card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; margin-bottom: 16px; }
 .card-header { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
 .card-title { font-size: 14px; font-weight: 600; color: var(--text-sub); letter-spacing: 1px; text-transform: uppercase; }
 
@@ -103,7 +103,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 .memo-cancel-btn { background: none; border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; font-size: 13px; font-family: var(--font); color: var(--text-sub); cursor: pointer; }
 
 /* Month memo */
-.section-block { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; margin-bottom: 16px; }
+.section-block { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); padding: 16px; margin-bottom: 16px; }
 .section-label { font-size: 13px; font-weight: 600; color: var(--text-sub); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; display: block; }
 .big-textarea { width: 100%; border: 1px solid var(--border); border-radius: 10px; padding: 12px; font-size: 16px; font-family: var(--font); background: var(--bg); color: var(--text); resize: vertical; min-height: 80px; }
 .big-textarea:focus { outline: none; border-color: var(--accent); }
@@ -130,7 +130,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 /* ── Annual ── */
 .year-nav-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
 .year-heading { font-size: 20px; font-weight: 700; }
-.annual-wrap { overflow-x: auto; border-radius: var(--radius); box-shadow: var(--shadow); background: var(--surface); margin-bottom: 16px; }
+.annual-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface); margin-bottom: 16px; }
 .annual-table { width: 100%; border-collapse: collapse; min-width: 500px; }
 .annual-table th { padding: 8px 10px; font-size: 13px; font-weight: 600; color: var(--text-sub); background: var(--surface); border-bottom: 2px solid var(--border); text-align: center; white-space: nowrap; }
 .annual-table th:first-child { text-align: left; min-width: 100px; }
@@ -144,7 +144,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 .chip-em { color: var(--text-sub); font-size: 12px; }
 
 /* ── Vision Board ── */
-.vb-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; margin-bottom: 16px; position: relative; }
+.vb-card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; margin-bottom: 16px; position: relative; }
 .vb-empty { aspect-ratio: 16/9; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer; border: 2px dashed var(--border); border-radius: var(--radius); color: var(--text-sub); transition: border-color 0.2s, background 0.2s; }
 .vb-empty:hover { border-color: var(--accent); background: var(--accent-light); color: var(--accent); }
 .vb-empty-label { font-size: 15px; font-weight: 600; }
@@ -162,7 +162,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 @keyframes vb-spin { to { transform: rotate(360deg); } }
 
 /* ── Body composition ── */
-.body-form-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; margin-bottom: 16px; }
+.body-form-card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); padding: 16px; margin-bottom: 16px; }
 .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 12px; }
 .form-group { display: flex; flex-direction: column; gap: 4px; }
 .form-label { font-size: 12px; font-weight: 600; color: var(--text-sub); }
@@ -171,10 +171,10 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 .form-sel { width: 100%; border: 1px solid var(--border); border-radius: 8px; padding: 9px 10px; font-size: 16px; font-family: var(--font); background: var(--bg); color: var(--text); }
 .submit-btn { width: 100%; background: linear-gradient(135deg, var(--g-from) 0%, var(--g-to) 100%); color: #fff; border: none; border-radius: 50px; padding: 13px; font-size: 16px; font-weight: 700; font-family: var(--font); cursor: pointer; transition: opacity 0.2s; box-shadow: 0 4px 12px rgba(56,173,108,0.3); letter-spacing: 0.3px; }
 .submit-btn:hover { opacity: 0.88; }
-.chart-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; margin-bottom: 16px; overflow-x: auto; }
+.chart-card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); padding: 16px; margin-bottom: 16px; overflow-x: auto; }
 .chart-label { font-size: 12px; font-weight: 600; color: var(--text-sub); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px; }
 .line-chart-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-.data-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); overflow-x: auto; }
+.data-card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); overflow-x: auto; }
 .data-table { width: 100%; border-collapse: collapse; min-width: 300px; }
 .data-table th { padding: 9px 8px; font-size: 13px; font-weight: 600; color: var(--text-sub); background: var(--surface); border-bottom: 2px solid var(--border); text-align: center; white-space: nowrap; }
 .data-table td { padding: 9px 8px; border-bottom: 1px solid var(--border); text-align: center; font-size: 14px; }
