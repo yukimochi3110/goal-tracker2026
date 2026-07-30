@@ -10,8 +10,8 @@
 <meta name="theme-color" content="#38AD6C">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-:root { --bg: #F2FAF5; --surface: #FFFFFF; --text: #2C3C32; --text-sub: #82A08C; --border: #D4EAD9; --accent: #44B872; --accent-light: #E8F8EE; --g-from: #8ED4A8; --g-to: #38AD6C; --sun: #C84848; --sat: #4070C0; --stop: #C04040; --wknd-bg: #FAF7F2; --tb-page-bg: #F4F6F4; --tb-line: #E4E8E5; --tb-head-bg: #F1F4F2; --tb-head-tx: #5C6B60; --tb-empty-tx: #A6B0A9; --tb-now-tx: #228A4C; --tb-done-bg: #FFFCF1; --tb-done-bar: #DFAE38; --tb-done-tx: #DFAE38; --tb-stop-bg: #F8F9F8; --tb-stop-bar: #C3CBC5; --tb-stop-ic: #A9B3AB; --shadow: 0 2px 14px rgba(30,80,50,0.07); --radius: 14px; --font: 'Noto Sans JP', sans-serif; }
-@media (prefers-color-scheme: dark) { :root { --bg: #161E18; --surface: #1E2A20; --text: #D4ECD8; --text-sub: #689A72; --border: #2A3C2E; --accent: #5CD48A; --accent-light: #1A2E1E; --g-from: #4A9060; --g-to: #287048; --sun: #D46868; --sat: #5090D0; --stop: #D46868; --tb-page-bg: #131714; --tb-line: #2A332C; --tb-head-bg: #1E2520; --tb-head-tx: #8A998E; --tb-empty-tx: #6E7C71; --tb-now-tx: #8AE3AD; --tb-done-bg: #241F12; --tb-done-bar: #C79A2E; --tb-done-tx: #E0BE55; --tb-stop-bg: #1C201D; --tb-stop-bar: #4A544C; --tb-stop-ic: #6E7C71; --wknd-bg: #1C2218; --shadow: 0 2px 16px rgba(0,0,0,0.3); } }
+:root { --bg: #F4F6F4; --surface: #FFFFFF; --text: #2C3C32; --text-sub: #82A08C; --border: #E4E8E5; --accent: #44B872; --accent-light: #E8F8EE; --g-from: #8ED4A8; --g-to: #38AD6C; --sun: #C84848; --sat: #4070C0; --stop: #C04040; --wknd-bg: #F2F3F1; --tb-head-bg: #F1F4F2; --tb-head-tx: #5C6B60; --tb-empty-tx: #A6B0A9; --tb-now-tx: #228A4C; --tb-done-bg: #FFFCF1; --tb-done-bar: #DFAE38; --tb-done-tx: #DFAE38; --tb-stop-bg: #F8F9F8; --tb-stop-bar: #C3CBC5; --tb-stop-ic: #A9B3AB; --shadow: 0 2px 14px rgba(30,80,50,0.07); --radius: 14px; --font: 'Noto Sans JP', sans-serif; }
+@media (prefers-color-scheme: dark) { :root { --bg: #131714; --surface: #1E2A20; --text: #D4ECD8; --text-sub: #689A72; --border: #2A332C; --accent: #5CD48A; --accent-light: #1A2E1E; --g-from: #4A9060; --g-to: #287048; --sun: #D46868; --sat: #5090D0; --stop: #D46868; --tb-head-bg: #1E2520; --tb-head-tx: #8A998E; --tb-empty-tx: #6E7C71; --tb-now-tx: #8AE3AD; --tb-done-bg: #241F12; --tb-done-bar: #C79A2E; --tb-done-tx: #E0BE55; --tb-stop-bg: #1C201D; --tb-stop-bar: #4A544C; --tb-stop-ic: #6E7C71; --wknd-bg: #1E211D; --shadow: 0 2px 16px rgba(0,0,0,0.3); } }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; }
 body { font-family: var(--font); background: var(--bg); color: var(--text); font-size: 16px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
@@ -185,14 +185,14 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 .empty-msg { text-align: center; padding: 36px 16px; color: var(--text-sub); font-size: 15px; }
 
 /* ── Time bucket ── */
-.tb-prog-card { background: var(--surface); border: 1px solid var(--tb-line); border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+.tb-prog-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 14px; }
 .tb-prog-top { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 .tb-prog-num { font-size: 28px; font-weight: 700; color: var(--tb-now-tx); line-height: 1.1; }
 .tb-prog-sub { font-size: 12px; font-weight: 600; color: var(--tb-head-tx); letter-spacing: 1px; text-transform: uppercase; margin-top: 3px; }
 .tb-prog-meta { font-size: 13px; color: var(--tb-head-tx); text-align: right; line-height: 1.6; white-space: nowrap; }
 .tb-prog-bar { height: 8px; background: var(--tb-head-bg); border-radius: 5px; overflow: hidden; }
 .tb-prog-fill { height: 100%; background: linear-gradient(135deg, var(--g-from) 0%, var(--g-to) 100%); border-radius: 5px; transition: width 0.6s ease; }
-.tb-bucket { background: var(--surface); border: 1px solid var(--tb-line); border-radius: 12px; overflow: hidden; }
+.tb-bucket { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
 /* 中身のない年代は控えめに（中身のある年代に目が行くようにする） */
 .tb-bucket.empty { background: none; border-style: dashed; }
 .tb-bucket-head { display: flex; align-items: center; gap: 8px; padding: 10px 13px; background: var(--tb-head-bg); }
@@ -203,10 +203,10 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 .tb-bucket.now .tb-bucket-age { color: var(--tb-now-tx); }
 .tb-now-badge { font-size: 11px; font-weight: 700; color: #fff; background: linear-gradient(135deg, var(--g-from) 0%, var(--g-to) 100%); border-radius: 10px; padding: 1px 8px; }
 .tb-bucket-count { font-size: 12px; color: var(--tb-empty-tx); margin-left: auto; }
-.tb-add-here { background: none; border: 1px solid var(--tb-line); border-radius: 8px; width: 26px; height: 26px; font-size: 15px; line-height: 1; color: var(--tb-empty-tx); cursor: pointer; font-family: var(--font); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: color 0.15s, border-color 0.15s; }
+.tb-add-here { background: none; border: 1px solid var(--border); border-radius: 8px; width: 26px; height: 26px; font-size: 15px; line-height: 1; color: var(--tb-empty-tx); cursor: pointer; font-family: var(--font); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: color 0.15s, border-color 0.15s; }
 .tb-add-here:hover { border-color: var(--accent); color: var(--accent); background: var(--surface); }
 /* 状態は「左端の細い色帯＋うすい地色」で示す（面で塗ると色が主張しすぎるため） */
-.tb-item { display: flex; align-items: flex-start; gap: 10px; padding: 11px 14px 11px 11px; border-top: 1px solid var(--tb-line); border-left: 3px solid transparent; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; transition: background 0.2s; }
+.tb-item { display: flex; align-items: flex-start; gap: 10px; padding: 11px 14px 11px 11px; border-top: 1px solid var(--border); border-left: 3px solid transparent; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; transition: background 0.2s; }
 .tb-item-wrap:first-of-type .tb-item { border-top: none; }
 .tb-item.done { background: var(--tb-done-bg); border-left-color: var(--tb-done-bar); }
 .tb-item.stopped { background: var(--tb-stop-bg); border-left-color: var(--tb-stop-bar); }
@@ -228,7 +228,7 @@ body.tb-dragging .tb-item { cursor: grabbing; }
 .tb-fab { position: fixed; right: 18px; bottom: 22px; width: 56px; height: 56px; border-radius: 50%; border: none; background: linear-gradient(135deg, var(--g-from) 0%, var(--g-to) 100%); color: #fff; font-size: 30px; line-height: 1; font-family: var(--font); cursor: pointer; box-shadow: 0 6px 20px rgba(56,173,108,0.45); z-index: 150; display: flex; align-items: center; justify-content: center; transition: transform 0.1s; }
 .tb-fab:active { transform: scale(0.92); }
 /* 背景をほぼ無彩色にして、白いカードが浮き上がるようにする（このタブのみ） */
-#page-bucket { background: var(--tb-page-bg); padding-bottom: 92px; }
+#page-bucket { padding-bottom: 92px; }
 .tb-done-age { font-size: 12px; font-weight: 600; color: var(--tb-done-tx); white-space: nowrap; flex-shrink: 0; margin-top: 3px; }
 .tb-item-edit { background: none; border: none; cursor: pointer; padding: 4px; color: var(--text-sub); border-radius: 6px; display: flex; flex-shrink: 0; }
 .tb-item-edit:hover { color: var(--accent); background: var(--accent-light); }
