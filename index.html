@@ -10,8 +10,8 @@
 <meta name="theme-color" content="#38AD6C">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-:root { --bg: #F2FAF5; --surface: #FFFFFF; --text: #2C3C32; --text-sub: #82A08C; --border: #D4EAD9; --accent: #44B872; --accent-light: #E8F8EE; --g-from: #8ED4A8; --g-to: #38AD6C; --sun: #C84848; --sat: #4070C0; --stop: #C04040; --wknd-bg: #FAF7F2; --tb-done-bg: #FDF3D2; --tb-stop-bg: #E9EDEA; --shadow: 0 2px 14px rgba(30,80,50,0.07); --radius: 14px; --font: 'Noto Sans JP', sans-serif; }
-@media (prefers-color-scheme: dark) { :root { --bg: #161E18; --surface: #1E2A20; --text: #D4ECD8; --text-sub: #689A72; --border: #2A3C2E; --accent: #5CD48A; --accent-light: #1A2E1E; --g-from: #4A9060; --g-to: #287048; --sun: #D46868; --sat: #5090D0; --stop: #D46868; --tb-done-bg: #322C14; --tb-stop-bg: #232823; --wknd-bg: #1C2218; --shadow: 0 2px 16px rgba(0,0,0,0.3); } }
+:root { --bg: #F2FAF5; --surface: #FFFFFF; --text: #2C3C32; --text-sub: #82A08C; --border: #D4EAD9; --accent: #44B872; --accent-light: #E8F8EE; --g-from: #8ED4A8; --g-to: #38AD6C; --sun: #C84848; --sat: #4070C0; --stop: #C04040; --wknd-bg: #FAF7F2; --tb-done-bg: #FCF8C4; --tb-done-tx: #7C6C22; --tb-stop-bg: #E9EDEA; --tb-head-bg: #E2F0E7; --tb-head-now-bg: #C6E8D4; --tb-head-now-tx: #1B7A42; --shadow: 0 2px 14px rgba(30,80,50,0.07); --radius: 14px; --font: 'Noto Sans JP', sans-serif; }
+@media (prefers-color-scheme: dark) { :root { --bg: #161E18; --surface: #1E2A20; --text: #D4ECD8; --text-sub: #689A72; --border: #2A3C2E; --accent: #5CD48A; --accent-light: #1A2E1E; --g-from: #4A9060; --g-to: #287048; --sun: #D46868; --sat: #5090D0; --stop: #D46868; --tb-done-bg: #34321A; --tb-done-tx: #CBC183; --tb-stop-bg: #232823; --tb-head-bg: #232E26; --tb-head-now-bg: #2E4A37; --tb-head-now-tx: #7FE0A5; --wknd-bg: #1C2218; --shadow: 0 2px 16px rgba(0,0,0,0.3); } }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; }
 body { font-family: var(--font); background: var(--bg); color: var(--text); font-size: 16px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
@@ -194,10 +194,10 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 .tb-prog-fill { height: 100%; background: linear-gradient(90deg, var(--g-from) 0%, var(--g-to) 100%); border-radius: 6px; transition: width 0.6s ease; }
 .tb-bucket { border-bottom: 1px solid var(--border); }
 .tb-bucket:last-child { border-bottom: none; }
-.tb-bucket-head { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: var(--bg); }
-.tb-bucket.now .tb-bucket-head { background: var(--accent-light); }
+.tb-bucket-head { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: var(--tb-head-bg); border-bottom: 1px solid var(--border); }
+.tb-bucket.now .tb-bucket-head { background: var(--tb-head-now-bg); }
 .tb-bucket-age { font-size: 15px; font-weight: 700; color: var(--text); }
-.tb-bucket.now .tb-bucket-age { color: var(--accent); }
+.tb-bucket.now .tb-bucket-age { color: var(--tb-head-now-tx); }
 .tb-now-badge { font-size: 11px; font-weight: 700; color: #fff; background: var(--accent); border-radius: 10px; padding: 1px 8px; }
 .tb-bucket-count { font-size: 12px; color: var(--text-sub); margin-left: auto; }
 .tb-add-here { background: none; border: 1px solid var(--border); border-radius: 8px; width: 27px; height: 27px; font-size: 16px; line-height: 1; color: var(--text-sub); cursor: pointer; font-family: var(--font); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: color 0.15s, border-color 0.15s; }
@@ -223,7 +223,7 @@ body.tb-dragging .tb-item { cursor: grabbing; }
 .tb-fab { position: fixed; right: 18px; bottom: 22px; width: 56px; height: 56px; border-radius: 50%; border: none; background: linear-gradient(135deg, var(--g-from) 0%, var(--g-to) 100%); color: #fff; font-size: 30px; line-height: 1; font-family: var(--font); cursor: pointer; box-shadow: 0 6px 20px rgba(56,173,108,0.45); z-index: 150; display: flex; align-items: center; justify-content: center; transition: transform 0.1s; }
 .tb-fab:active { transform: scale(0.92); }
 #page-bucket { padding-bottom: 92px; }   /* 一番下の年代が追加ボタンの下に隠れないようにする */
-.tb-item-sub { font-size: 12px; color: var(--text-sub); margin-top: 2px; }
+.tb-done-age { font-size: 12px; font-weight: 600; color: var(--tb-done-tx); white-space: nowrap; flex-shrink: 0; margin-top: 3px; }
 .tb-item-edit { background: none; border: none; cursor: pointer; padding: 4px; color: var(--text-sub); border-radius: 6px; display: flex; flex-shrink: 0; }
 .tb-item-edit:hover { color: var(--accent); background: var(--accent-light); }
 .tb-edit-form { display: none; padding: 6px 14px 14px; border-top: 1px solid var(--border); background: var(--bg); }
@@ -249,6 +249,13 @@ body.tb-dragging .tb-item { cursor: grabbing; }
 .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; display: none; align-items: flex-end; justify-content: center; }
 .overlay.open { display: flex; }
 .modal { background: var(--surface); border-radius: 20px 20px 0 0; width: 100%; max-width: 540px; max-height: 88vh; overflow-y: auto; padding: 16px 18px 40px; }
+/* 追加画面は画面中央に出す（設定画面は従来どおり下から出るシート） */
+.overlay.center { align-items: center; padding: 16px; }
+.overlay.center .modal { border-radius: 18px; max-width: 440px; max-height: 86vh; padding: 20px 18px 22px; box-shadow: 0 12px 40px rgba(0,0,0,0.28); }
+.tb-modal-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 16px; }
+.tb-modal-head .modal-h { margin-bottom: 0; }
+.tb-modal-close { background: var(--bg); border: 1px solid var(--border); border-radius: 50%; width: 30px; height: 30px; font-size: 15px; line-height: 1; color: var(--text-sub); cursor: pointer; font-family: var(--font); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: color 0.15s, border-color 0.15s; }
+.tb-modal-close:hover { color: var(--stop); border-color: var(--stop); }
 .modal-bar { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 18px; }
 .modal-h { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
 .goal-row { display: flex; align-items: center; gap: 10px; padding: 11px 0; border-bottom: 1px solid var(--border); }
@@ -1457,8 +1464,9 @@ function tbAgeOptions(selAge) {
 
 function tbItemHTML(it) {
   const st = TB_STATUS[it.status] ? it.status : 'active';
-  const sub = st === 'done' ? (Number.isFinite(it.doneAge) ? `${it.doneAge}歳で達成` : '達成')
-            : st === 'stopped' ? '中止' : '';
+  // 状態はカードの色で分かるので、達成年齢だけ1行内に小さく添える
+  const ageTag = st === 'done' && Number.isFinite(it.doneAge)
+    ? `<span class="tb-done-age">${it.doneAge}歳</span>` : '';
   const stOpts = Object.keys(TB_STATUS)
     .map(k => `<option value="${k}"${k === st ? ' selected' : ''}>${TB_STATUS[k]}</option>`).join('');
   return `<div class="tb-item-wrap">
@@ -1466,8 +1474,8 @@ function tbItemHTML(it) {
       <button class="tb-status" data-id="${esc(it.id)}" style="color:${TB_COLOR[st]}" title="${TB_STATUS[st]}（タップで切替）">${TB_SYM[st]}</button>
       <div class="tb-item-body">
         <div class="tb-item-text ${st}">${esc(it.text)}</div>
-        ${sub ? `<div class="tb-item-sub">${sub}</div>` : ''}
       </div>
+      ${ageTag}
       <button class="tb-item-edit" data-id="${esc(it.id)}" title="編集">${SYM_PENCIL}</button>
     </div>
     <div class="tb-edit-form" id="tb-edit-${esc(it.id)}">
@@ -1558,8 +1566,10 @@ function tbOpenAddModal(presetAge) {
   const stOpts = Object.keys(TB_STATUS)
     .map(k => `<option value="${k}"${k === 'active' ? ' selected' : ''}>${TB_STATUS[k]}</option>`).join('');
   modal.innerHTML = `
-    <div class="modal-bar"></div>
-    <div class="modal-h">やりたいことを追加</div>
+    <div class="tb-modal-head">
+      <div class="modal-h">やりたいことを追加</div>
+      <button class="tb-modal-close" id="tb-a-close" title="閉じる">✕</button>
+    </div>
     <span class="field-lbl">やりたいこと</span>
     <input class="text-input" id="tb-a-text" type="text" placeholder="例：オーロラを見に行く">
     <span class="field-lbl">年代</span>
@@ -1571,7 +1581,8 @@ function tbOpenAddModal(presetAge) {
       <input class="text-input" id="tb-a-done" type="number" placeholder="${tbAge()}">
     </div>
     <button class="add-goal-btn" id="tb-a-save">追加する</button>`;
-  document.getElementById('overlay').classList.add('open');
+  document.getElementById('overlay').classList.add('open', 'center');
+  modal.querySelector('#tb-a-close').onclick = closeModal;
 
   const input = modal.querySelector('#tb-a-text');
   const stSel = modal.querySelector('#tb-a-st');
@@ -1829,8 +1840,14 @@ function tbCfgPreview() {
 }
 
 // ── Settings ──
-function openSettings() { document.getElementById('overlay').classList.add('open'); renderSettings(); }
-function closeModal() { document.getElementById('overlay').classList.remove('open'); }
+function openSettings() {
+  const ov = document.getElementById('overlay');
+  ov.classList.remove('center');   // 設定画面は下から出るシート
+  ov.classList.add('open');
+  renderSettings();
+}
+// center は追加画面だけで使うので、閉じるときに必ず外す（設定画面に残らないように）
+function closeModal() { document.getElementById('overlay').classList.remove('open', 'center'); }
 function closeSettings() { closeModal(); }
 
 function renderSettings() {
