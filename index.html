@@ -10,8 +10,8 @@
 <meta name="theme-color" content="#38AD6C">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-:root { --bg: #F2FAF5; --surface: #FFFFFF; --text: #2C3C32; --text-sub: #82A08C; --border: #D4EAD9; --accent: #44B872; --accent-light: #E8F8EE; --g-from: #8ED4A8; --g-to: #38AD6C; --sun: #C84848; --sat: #4070C0; --stop: #C04040; --wknd-bg: #FAF7F2; --shadow: 0 2px 14px rgba(30,80,50,0.07); --radius: 14px; --font: 'Noto Sans JP', sans-serif; }
-@media (prefers-color-scheme: dark) { :root { --bg: #161E18; --surface: #1E2A20; --text: #D4ECD8; --text-sub: #689A72; --border: #2A3C2E; --accent: #5CD48A; --accent-light: #1A2E1E; --g-from: #4A9060; --g-to: #287048; --sun: #D46868; --sat: #5090D0; --stop: #D46868; --wknd-bg: #1C2218; --shadow: 0 2px 16px rgba(0,0,0,0.3); } }
+:root { --bg: #F2FAF5; --surface: #FFFFFF; --text: #2C3C32; --text-sub: #82A08C; --border: #D4EAD9; --accent: #44B872; --accent-light: #E8F8EE; --g-from: #8ED4A8; --g-to: #38AD6C; --sun: #C84848; --sat: #4070C0; --stop: #C04040; --wknd-bg: #FAF7F2; --tb-done-bg: #FDF3D2; --tb-stop-bg: #E9EDEA; --shadow: 0 2px 14px rgba(30,80,50,0.07); --radius: 14px; --font: 'Noto Sans JP', sans-serif; }
+@media (prefers-color-scheme: dark) { :root { --bg: #161E18; --surface: #1E2A20; --text: #D4ECD8; --text-sub: #689A72; --border: #2A3C2E; --accent: #5CD48A; --accent-light: #1A2E1E; --g-from: #4A9060; --g-to: #287048; --sun: #D46868; --sat: #5090D0; --stop: #D46868; --tb-done-bg: #322C14; --tb-stop-bg: #232823; --wknd-bg: #1C2218; --shadow: 0 2px 16px rgba(0,0,0,0.3); } }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; }
 body { font-family: var(--font); background: var(--bg); color: var(--text); font-size: 16px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
@@ -202,13 +202,27 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 .tb-bucket-count { font-size: 12px; color: var(--text-sub); margin-left: auto; }
 .tb-add-here { background: none; border: 1px solid var(--border); border-radius: 8px; width: 27px; height: 27px; font-size: 16px; line-height: 1; color: var(--text-sub); cursor: pointer; font-family: var(--font); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: color 0.15s, border-color 0.15s; }
 .tb-add-here:hover { border-color: var(--accent); color: var(--accent); background: var(--surface); }
-.tb-item { display: flex; align-items: flex-start; gap: 10px; padding: 11px 14px; border-top: 1px solid var(--border); }
+.tb-item { display: flex; align-items: flex-start; gap: 10px; padding: 11px 14px; border-top: 1px solid var(--border); user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; transition: background 0.2s; }
+.tb-item.done { background: var(--tb-done-bg); }
+.tb-item.stopped { background: var(--tb-stop-bg); }
 .tb-status { background: none; border: none; padding: 1px 0 0; cursor: pointer; display: flex; flex-shrink: 0; transition: transform 0.1s; }
 .tb-status:active { transform: scale(0.85); }
 .tb-item-body { flex: 1; min-width: 0; }
 .tb-item-text { font-size: 16px; line-height: 1.5; word-break: break-word; }
-.tb-item-text.done { color: var(--text-sub); text-decoration: line-through; }
 .tb-item-text.stopped { color: var(--text-sub); }
+
+/* ドラッグで年代を移動 */
+.tb-drag-src { opacity: 0.3; }
+.tb-drag-clone { position: fixed; z-index: 9998; pointer-events: none; background: var(--surface); border-top: none; border-radius: 10px; box-shadow: 0 10px 26px rgba(0,0,0,0.24); transform: scale(1.03); }
+body.tb-dragging { cursor: grabbing; }
+body.tb-dragging .tb-item { cursor: grabbing; }
+.tb-bucket.tb-drop { outline: 2px solid var(--accent); outline-offset: -2px; }
+.tb-bucket.tb-drop .tb-bucket-head { background: var(--accent); }
+.tb-bucket.tb-drop .tb-bucket-age, .tb-bucket.tb-drop .tb-bucket-count { color: #fff; }
+.tb-hint { font-size: 12px; color: var(--text-sub); text-align: center; margin: -4px 0 12px; }
+.tb-fab { position: fixed; right: 18px; bottom: 22px; width: 56px; height: 56px; border-radius: 50%; border: none; background: linear-gradient(135deg, var(--g-from) 0%, var(--g-to) 100%); color: #fff; font-size: 30px; line-height: 1; font-family: var(--font); cursor: pointer; box-shadow: 0 6px 20px rgba(56,173,108,0.45); z-index: 150; display: flex; align-items: center; justify-content: center; transition: transform 0.1s; }
+.tb-fab:active { transform: scale(0.92); }
+#page-bucket { padding-bottom: 92px; }   /* 一番下の年代が追加ボタンの下に隠れないようにする */
 .tb-item-sub { font-size: 12px; color: var(--text-sub); margin-top: 2px; }
 .tb-item-edit { background: none; border: none; cursor: pointer; padding: 4px; color: var(--text-sub); border-radius: 6px; display: flex; flex-shrink: 0; }
 .tb-item-edit:hover { color: var(--accent); background: var(--accent-light); }
@@ -227,8 +241,6 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 /* バケットタブのみ、PCでは横幅いっぱいに広げて年代を複数列で並べる */
 #app.wide { max-width: 100%; }
 @media (min-width: 900px) {
-  #app.wide .tb-top { display: flex; align-items: flex-start; gap: 16px; }
-  #app.wide .tb-top > * { flex: 1; min-width: 0; }
   #app.wide .tb-buckets { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; align-items: start; background: none; box-shadow: none; border-radius: 0; overflow: visible; }
   #app.wide .tb-buckets .tb-bucket { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); border-bottom: none; overflow: hidden; }
 }
@@ -1450,7 +1462,7 @@ function tbItemHTML(it) {
   const stOpts = Object.keys(TB_STATUS)
     .map(k => `<option value="${k}"${k === st ? ' selected' : ''}>${TB_STATUS[k]}</option>`).join('');
   return `<div class="tb-item-wrap">
-    <div class="tb-item">
+    <div class="tb-item ${st}">
       <button class="tb-status" data-id="${esc(it.id)}" style="color:${TB_COLOR[st]}" title="${TB_STATUS[st]}（タップで切替）">${TB_SYM[st]}</button>
       <div class="tb-item-body">
         <div class="tb-item-text ${st}">${esc(it.text)}</div>
@@ -1481,10 +1493,6 @@ function tbItemHTML(it) {
 
 function renderBucket() {
   const el = document.getElementById('page-bucket');
-  // 再描画で入力途中の内容が消えないように退避する
-  const prevText = document.getElementById('tb-new-text')?.value ?? '';
-  const prevAge  = document.getElementById('tb-new-age')?.value;
-
   const items = S.buckets || [];
   const age = tbAge();
   const { groups, outRange, unset } = tbGroups();
@@ -1494,7 +1502,8 @@ function renderBucket() {
   const pct = denom > 0 ? Math.round(doneN / denom * 100) : 0;
   const nowG = groups.find(g => age >= g.start && age <= g.end);
 
-  const extraSection = (title, list) => list.length ? `<div class="tb-bucket">
+  // dropAge に null を渡した枠はドラッグの受け入れ先にしない（範囲外は年代が決まらないため）
+  const extraSection = (title, list, dropAge) => list.length ? `<div class="tb-bucket"${dropAge === null ? '' : ` data-drop-age="${dropAge}"`}>
       <div class="tb-bucket-head">
         <span class="tb-bucket-age">${title}</span>
         <span class="tb-bucket-count">${list.length}件</span>
@@ -1504,7 +1513,7 @@ function renderBucket() {
 
   const bucketHTML = groups.map(g => {
     const isNow = nowG && g.start === nowG.start;
-    return `<div class="tb-bucket${isNow ? ' now' : ''}">
+    return `<div class="tb-bucket${isNow ? ' now' : ''}" data-drop-age="${g.start}">
       <div class="tb-bucket-head">
         <span class="tb-bucket-age">${tbLabel(g)}</span>
         ${isNow ? '<span class="tb-now-badge">いま</span>' : ''}
@@ -1516,7 +1525,6 @@ function renderBucket() {
   }).join('');
 
   el.innerHTML = `
-    <div class="tb-top">
     <div class="tb-prog-card">
       <div class="tb-prog-top">
         <div>
@@ -1531,62 +1539,80 @@ function renderBucket() {
       <div class="tb-prog-bar"><div class="tb-prog-fill" style="width:${pct}%"></div></div>
     </div>
 
-    <div class="body-form-card">
-      <span class="field-lbl">やりたいこと</span>
-      <input class="text-input" id="tb-new-text" type="text" placeholder="例：オーロラを見に行く">
-      <span class="field-lbl">年代</span>
-      <select class="freq-sel" id="tb-new-age">${tbAgeOptions(nowG ? nowG.start : null)}</select>
-      <button class="submit-btn" id="tb-add">追加する</button>
-    </div>
-    </div>
+    <div class="tb-hint">カードを長押しすると、ドラッグで年代を移動できます</div>
 
     <div class="tb-buckets">
       ${bucketHTML}
-      ${extraSection('範囲外', outRange)}
-      ${extraSection('未設定', unset)}
-    </div>`;
+      ${extraSection('範囲外', outRange, null)}
+      ${extraSection('未設定', unset, '')}
+    </div>
 
-  const ti = el.querySelector('#tb-new-text');
-  if (ti) ti.value = prevText;
-  const ai = el.querySelector('#tb-new-age');
-  if (ai && prevAge !== undefined && [...ai.options].some(o => o.value === prevAge)) ai.value = prevAge;
+    <button class="tb-fab" id="tb-fab" title="やりたいことを追加">＋</button>`;
 
   bindBucketEvents();
 }
 
-function bindBucketEvents() {
-  const page = document.getElementById('page-bucket');
+// 追加はモーダル（ボトムシート）で行う。常設の入力欄は置かない
+function tbOpenAddModal(presetAge) {
+  const modal = document.getElementById('modal-body');
+  const stOpts = Object.keys(TB_STATUS)
+    .map(k => `<option value="${k}"${k === 'active' ? ' selected' : ''}>${TB_STATUS[k]}</option>`).join('');
+  modal.innerHTML = `
+    <div class="modal-bar"></div>
+    <div class="modal-h">やりたいことを追加</div>
+    <span class="field-lbl">やりたいこと</span>
+    <input class="text-input" id="tb-a-text" type="text" placeholder="例：オーロラを見に行く">
+    <span class="field-lbl">年代</span>
+    <select class="freq-sel" id="tb-a-age">${tbAgeOptions(presetAge)}</select>
+    <span class="field-lbl">状態</span>
+    <select class="freq-sel" id="tb-a-st">${stOpts}</select>
+    <div id="tb-a-donewrap" style="display:none">
+      <span class="field-lbl">達成した年齢</span>
+      <input class="text-input" id="tb-a-done" type="number" placeholder="${tbAge()}">
+    </div>
+    <button class="add-goal-btn" id="tb-a-save">追加する</button>`;
+  document.getElementById('overlay').classList.add('open');
 
-  page.querySelector('#tb-add').onclick = () => {
-    const input = page.querySelector('#tb-new-text');
+  const input = modal.querySelector('#tb-a-text');
+  const stSel = modal.querySelector('#tb-a-st');
+  stSel.onchange = () => {
+    modal.querySelector('#tb-a-donewrap').style.display = stSel.value === 'done' ? '' : 'none';
+  };
+
+  const submit = () => {
     const text = input.value.trim();
     if (!text) { alert('やりたいことを入力してください'); input.focus(); return; }
-    const ageVal = page.querySelector('#tb-new-age').value;
+    const ageVal  = modal.querySelector('#tb-a-age').value;
+    const st      = TB_STATUS[stSel.value] ? stSel.value : 'active';
+    const doneVal = modal.querySelector('#tb-a-done').value;
     if (!Array.isArray(S.buckets)) S.buckets = [];
     S.buckets.push({
       id: 'tb' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
       text,
       age: ageVal === '' ? null : +ageVal,
-      status: 'active',
-      doneAge: null,
+      status: st,
+      doneAge: st === 'done' ? (doneVal === '' ? tbAge() : Math.floor(+doneVal)) : null,
       createdAt: Date.now(),
     });
-    input.value = '';   // 退避処理に拾われないよう先に消す
-    save(); renderBucket();
+    save();
+    closeModal();
+    renderBucket();
   };
+  modal.querySelector('#tb-a-save').onclick = submit;
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); submit(); } });
+  setTimeout(() => input.focus(), 60);   // シートが開いてからフォーカスする
+}
 
-  page.querySelector('#tb-new-text').addEventListener('keydown', e => {
-    if (e.key === 'Enter') { e.preventDefault(); page.querySelector('#tb-add').click(); }
-  });
+function bindBucketEvents() {
+  const page = document.getElementById('page-bucket');
+  const nowStart = tbRanges().find(r => tbAge() >= r.start && tbAge() <= r.end)?.start ?? null;
 
-  // 見出しの「＋」：その年代を選んだ状態で入力欄へ移動する
+  // 右下の追加ボタン：現在の年代を初期選択にして追加画面を開く
+  page.querySelector('#tb-fab').onclick = () => tbOpenAddModal(nowStart);
+
+  // 見出しの「＋」：その年代を初期選択にして追加画面を開く
   page.querySelectorAll('.tb-add-here').forEach(btn => {
-    btn.onclick = () => {
-      page.querySelector('#tb-new-age').value = btn.dataset.age;
-      const input = page.querySelector('#tb-new-text');
-      input.scrollIntoView({ block: 'center', behavior: 'smooth' });
-      input.focus();
-    };
+    btn.onclick = () => tbOpenAddModal(+btn.dataset.age);
   });
 
   // 状態アイコン：進行中 → 達成 → 中止 → 進行中
@@ -1657,6 +1683,124 @@ function bindBucketEvents() {
   });
 }
 
+// ── Time bucket: ドラッグで年代を移動 ───────────────────────────────────────
+// スマホのタッチとPCのマウスを同じ Pointer Events で扱う。
+// 縦スクロールと区別するため「長押ししてから動かす」方式にしている。
+let tbPress = null;   // 長押し待ち { id, srcEl, x, y, timer }
+let tbDrag  = null;   // ドラッグ中 { id, srcEl, clone, dx, dy, target, x, y }
+let tbScrollDir = 0, tbScrollRaf = null, tbSuppressClick = false;
+
+function tbCancelPress() {
+  if (tbPress?.timer) clearTimeout(tbPress.timer);
+  tbPress = null;
+}
+
+function tbStartDrag() {
+  if (!tbPress) return;
+  const { srcEl, id, x, y } = tbPress;
+  if (!srcEl.isConnected) { tbCancelPress(); return; }
+  const rect = srcEl.getBoundingClientRect();
+  const clone = srcEl.cloneNode(true);
+  clone.classList.add('tb-drag-clone');
+  clone.style.width = rect.width + 'px';
+  document.body.appendChild(clone);
+  srcEl.classList.add('tb-drag-src');
+  document.body.classList.add('tb-dragging');
+  tbDrag = { id, srcEl, clone, dx: x - rect.left, dy: y - rect.top, target: null, x, y };
+  navigator.vibrate?.(15);
+  tbMoveDrag(x, y);
+}
+
+function tbUpdateTarget(x, y) {
+  const under = document.elementFromPoint(x, y);
+  const bucket = under && under.closest('.tb-bucket[data-drop-age]');
+  if (bucket === tbDrag.target) return;
+  tbDrag.target?.classList.remove('tb-drop');
+  tbDrag.target = bucket;
+  bucket?.classList.add('tb-drop');
+}
+
+function tbMoveDrag(x, y) {
+  tbDrag.x = x; tbDrag.y = y;
+  tbDrag.clone.style.left = (x - tbDrag.dx) + 'px';
+  tbDrag.clone.style.top  = (y - tbDrag.dy) + 'px';
+  tbUpdateTarget(x, y);
+  // 画面の上下端に近づいたら自動スクロールする（年代が画面外にあるため）
+  const zone = 80;
+  tbScrollDir = y < zone ? -1 : y > window.innerHeight - zone ? 1 : 0;
+  if (tbScrollDir && !tbScrollRaf) tbScrollRaf = requestAnimationFrame(tbScrollStep);
+}
+
+function tbScrollStep() {
+  tbScrollRaf = null;
+  if (!tbDrag || !tbScrollDir) return;
+  const page = document.getElementById('page-bucket');
+  const el = page.scrollHeight > page.clientHeight + 1
+    ? page : (document.scrollingElement || document.documentElement);
+  el.scrollTop += tbScrollDir * 10;
+  tbUpdateTarget(tbDrag.x, tbDrag.y);   // スクロールで指の下の年代が変わる
+  tbScrollRaf = requestAnimationFrame(tbScrollStep);
+}
+
+function tbEndDrag(apply) {
+  const d = tbDrag;
+  tbDrag = null;
+  tbCancelPress();
+  tbScrollDir = 0;
+  if (tbScrollRaf) { cancelAnimationFrame(tbScrollRaf); tbScrollRaf = null; }
+  d.clone.remove();
+  d.srcEl.classList.remove('tb-drag-src');
+  document.body.classList.remove('tb-dragging');
+  const target = d.target;
+  target?.classList.remove('tb-drop');
+  tbSuppressClick = true;   // ドラッグ直後のクリックで編集が開かないようにする
+  setTimeout(() => { tbSuppressClick = false; }, 350);
+  if (!apply || !target) return;
+  const it = (S.buckets || []).find(x => x.id === d.id);
+  if (!it) return;
+  const raw = target.dataset.dropAge;
+  const newAge = raw === '' ? null : +raw;
+  if (it.age === newAge) return;   // 同じ年代に落としたときは何もしない
+  it.age = newAge;
+  save();
+  renderBucket();
+}
+
+// リスナーは一度だけ登録する（#page-bucket 自体は再描画で入れ替わらない）
+function setupBucketDrag() {
+  const page = document.getElementById('page-bucket');
+
+  page.addEventListener('pointerdown', e => {
+    if (e.button) return;                                        // 左ボタン/タッチのみ
+    if (e.target.closest('.tb-status, .tb-item-edit')) return;    // ボタンは対象外
+    const item = e.target.closest('.tb-item');
+    if (!item) return;
+    const id = item.querySelector('.tb-status')?.dataset.id;
+    if (!id) return;
+    tbCancelPress();
+    tbPress = { id, srcEl: item, x: e.clientX, y: e.clientY, timer: setTimeout(tbStartDrag, 350) };
+  });
+
+  window.addEventListener('pointermove', e => {
+    if (tbDrag) { tbMoveDrag(e.clientX, e.clientY); return; }
+    // 長押し判定中に大きく動いたらスクロール操作とみなして中止する
+    if (tbPress && Math.hypot(e.clientX - tbPress.x, e.clientY - tbPress.y) > 10) tbCancelPress();
+  });
+
+  window.addEventListener('pointerup',     () => { if (tbDrag) tbEndDrag(true);  else tbCancelPress(); });
+  window.addEventListener('pointercancel', () => { if (tbDrag) tbEndDrag(false); else tbCancelPress(); });
+
+  // ドラッグ中はブラウザのスクロールを止める（自前で端スクロールするため）
+  document.addEventListener('touchmove', e => { if (tbDrag) e.preventDefault(); }, { passive: false });
+
+  window.addEventListener('click', e => {
+    if (!tbSuppressClick) return;
+    tbSuppressClick = false;
+    e.stopPropagation();
+    e.preventDefault();
+  }, true);
+}
+
 // 設定画面の入力値を検証する。問題なければ空文字を返す
 function tbCfgError(birth, start, step, end) {
   const thisYear = TODAY.getFullYear();
@@ -1686,7 +1830,8 @@ function tbCfgPreview() {
 
 // ── Settings ──
 function openSettings() { document.getElementById('overlay').classList.add('open'); renderSettings(); }
-function closeSettings() { document.getElementById('overlay').classList.remove('open'); }
+function closeModal() { document.getElementById('overlay').classList.remove('open'); }
+function closeSettings() { closeModal(); }
 
 function renderSettings() {
   const modal = document.getElementById('modal-body');
@@ -1926,6 +2071,8 @@ setupSwipeNav('page-annual', {
   onSwipe: changeYear,
 });
 
+setupBucketDrag();
+
 // 画面復帰時：「今日」の日付を更新し、他端末での変更を取り込んで再描画する
 document.addEventListener('visibilitychange', async () => {
   if (document.visibilityState !== 'visible' || !currentUser || !dataLoaded) return;
@@ -1933,7 +2080,7 @@ document.addEventListener('visibilitychange', async () => {
   // 編集中・入力中に再描画すると内容が消えるためスキップ
   const editing = document.querySelector('.text-block-edit.open, .memo-edit-row.open, .tb-edit-form.open')
     || document.getElementById('overlay').classList.contains('open');
-  const bodyDirty = ['bw', 'bf', 'ba', 'tb-new-text'].some(id => {
+  const bodyDirty = ['bw', 'bf', 'ba'].some(id => {
     const el = document.getElementById(id);
     return el && el.value;
   });
