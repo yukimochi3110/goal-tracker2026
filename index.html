@@ -10,8 +10,8 @@
 <meta name="theme-color" content="#38AD6C">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-:root { --bg: #F4F6F4; --surface: #FFFFFF; --text: #2C3C32; --text-sub: #82A08C; --border: #E4E8E5; --accent: #44B872; --accent-light: #E8F8EE; --g-from: #8ED4A8; --g-to: #38AD6C; --sun: #C84848; --sat: #4070C0; --stop: #C04040; --wknd-bg: #F2F3F1; --tb-head-bg: #F1F4F2; --tb-head-tx: #5C6B60; --tb-empty-tx: #A6B0A9; --tb-now-tx: #228A4C; --tb-done-bg: #FFFCF1; --tb-done-bar: #DFAE38; --tb-done-tx: #DFAE38; --tb-stop-bg: #F8F9F8; --tb-stop-bar: #C3CBC5; --tb-stop-ic: #A9B3AB; --shadow: 0 2px 14px rgba(30,80,50,0.07); --radius: 14px; --font: 'Noto Sans JP', sans-serif; }
-@media (prefers-color-scheme: dark) { :root { --bg: #131714; --surface: #1E2A20; --text: #D4ECD8; --text-sub: #689A72; --border: #2A332C; --accent: #5CD48A; --accent-light: #1A2E1E; --g-from: #4A9060; --g-to: #287048; --sun: #D46868; --sat: #5090D0; --stop: #D46868; --tb-head-bg: #1E2520; --tb-head-tx: #8A998E; --tb-empty-tx: #6E7C71; --tb-now-tx: #8AE3AD; --tb-done-bg: #241F12; --tb-done-bar: #C79A2E; --tb-done-tx: #E0BE55; --tb-stop-bg: #1C201D; --tb-stop-bar: #4A544C; --tb-stop-ic: #6E7C71; --wknd-bg: #1E211D; --shadow: 0 2px 16px rgba(0,0,0,0.3); } }
+:root { --bg: #F4F6F4; --surface: #FFFFFF; --text: #2C3C32; --text-sub: #82A08C; --border: #E4E8E5; --accent: #44B872; --accent-light: #E8F8EE; --g-from: #8ED4A8; --g-to: #38AD6C; --sun: #C84848; --sat: #4070C0; --stop: #C04040; --tb-head-bg: #F1F4F2; --tb-head-tx: #5C6B60; --tb-empty-tx: #A6B0A9; --tb-now-tx: #228A4C; --tb-done-bg: #FFFCF1; --tb-done-bar: #DFAE38; --tb-done-tx: #DFAE38; --tb-stop-bg: #F8F9F8; --tb-stop-bar: #C3CBC5; --tb-stop-ic: #A9B3AB; --shadow: 0 2px 14px rgba(30,80,50,0.07); --radius: 14px; --font: 'Noto Sans JP', sans-serif; }
+@media (prefers-color-scheme: dark) { :root { --bg: #131714; --surface: #1E2A20; --text: #D4ECD8; --text-sub: #689A72; --border: #2A332C; --accent: #5CD48A; --accent-light: #1A2E1E; --g-from: #4A9060; --g-to: #287048; --sun: #D46868; --sat: #5090D0; --stop: #D46868; --tb-head-bg: #1E2520; --tb-head-tx: #8A998E; --tb-empty-tx: #6E7C71; --tb-now-tx: #8AE3AD; --tb-done-bg: #241F12; --tb-done-bar: #C79A2E; --tb-done-tx: #E0BE55; --tb-stop-bg: #1C201D; --tb-stop-bar: #4A544C; --tb-stop-ic: #6E7C71; --shadow: 0 2px 16px rgba(0,0,0,0.3); } }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; }
 body { font-family: var(--font); background: var(--bg); color: var(--text); font-size: 16px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
@@ -57,7 +57,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 /* ── Calendar Table ── */
 .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .cal-table { width: 100%; border-collapse: collapse; }
-.cal-table thead th { background: var(--bg); padding: 8px 6px; font-size: 12px; font-weight: 600; color: var(--text-sub); text-align: center; border-bottom: 2px solid var(--border); border-right: 1px solid var(--border); white-space: nowrap; position: sticky; top: 0; }
+.cal-table thead th { background: var(--surface); padding: 8px 6px; font-size: 12px; font-weight: 600; color: var(--text-sub); text-align: center; border-bottom: 2px solid var(--border); border-right: 1px solid var(--border); white-space: nowrap; position: sticky; top: 0; }
 .cal-table thead th:first-child { text-align: center; border-right: 2px solid var(--border); width: 1%; white-space: nowrap; }
 .cal-table thead th.th-memo { text-align: left; padding-left: 10px; min-width: 130px; border-right: none; }
 .cal-table thead th .th-icon { display: flex; flex-direction: column; align-items: center; gap: 2px; }
@@ -66,7 +66,6 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 .cal-day-row td { border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); vertical-align: middle; padding: 3px 4px; }
 .cal-day-row td:first-child { border-right: 2px solid var(--border); }
 .cal-day-row td:last-child { border-right: none; }
-.cal-day-row.wknd { background: var(--wknd-bg); }
 .cal-day-row.today td { background: var(--accent-light); }
 
 /* Date cell */
@@ -133,7 +132,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 .year-heading { font-size: 20px; font-weight: 700; }
 .annual-wrap { overflow-x: auto; border-radius: var(--radius); box-shadow: var(--shadow); background: var(--surface); margin-bottom: 16px; }
 .annual-table { width: 100%; border-collapse: collapse; min-width: 500px; }
-.annual-table th { padding: 8px 10px; font-size: 13px; font-weight: 600; color: var(--text-sub); background: var(--bg); border-bottom: 2px solid var(--border); text-align: center; white-space: nowrap; }
+.annual-table th { padding: 8px 10px; font-size: 13px; font-weight: 600; color: var(--text-sub); background: var(--surface); border-bottom: 2px solid var(--border); text-align: center; white-space: nowrap; }
 .annual-table th:first-child { text-align: left; min-width: 100px; }
 .annual-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: center; font-size: 15px; }
 .annual-table tr:last-child td { border-bottom: none; }
@@ -177,7 +176,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 .line-chart-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .data-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); overflow-x: auto; }
 .data-table { width: 100%; border-collapse: collapse; min-width: 300px; }
-.data-table th { padding: 9px 8px; font-size: 13px; font-weight: 600; color: var(--text-sub); background: var(--bg); border-bottom: 2px solid var(--border); text-align: center; white-space: nowrap; }
+.data-table th { padding: 9px 8px; font-size: 13px; font-weight: 600; color: var(--text-sub); background: var(--surface); border-bottom: 2px solid var(--border); text-align: center; white-space: nowrap; }
 .data-table td { padding: 9px 8px; border-bottom: 1px solid var(--border); text-align: center; font-size: 14px; }
 .data-table tr:last-child td { border-bottom: none; }
 .del-btn { background: none; border: 1px solid #E0B0B0; color: #C04040; border-radius: 6px; padding: 3px 8px; font-size: 12px; cursor: pointer; }
@@ -760,13 +759,13 @@ function buildCalHTML() {
   let rows = '';
   for (let d = 1; d <= days; d++) {
     const w = dow(y, m, d);
-    const isSun = w === 0, isSat = w === 6, isWknd = isSun || isSat;
+    const isSun = w === 0, isSat = w === 6;
     const isToday = y === TODAY.getFullYear() && m === TODAY.getMonth()+1 && d === TODAY.getDate();
     const memo = getMemo(y, m, d);
     const memoOpen = S.openMemoDay === d;
 
+    // 土日の行に背景色は付けない（日付の文字色だけで区別する）
     let rowCls = 'cal-day-row';
-    if (isWknd) rowCls += ' wknd';
     if (isToday) rowCls += ' today';
     let dateCls = 'date-cell';
     if (isSun) dateCls += ' is-sun';
