@@ -225,6 +225,14 @@ body.tb-dragging .tb-item { cursor: grabbing; }
 .tb-bucket.tb-drop { outline: 2px solid var(--accent); outline-offset: -2px; }
 .tb-bucket.tb-drop .tb-bucket-head { background: var(--accent); }
 .tb-bucket.tb-drop .tb-bucket-age, .tb-bucket.tb-drop .tb-bucket-count { color: #fff; }
+.tb-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.tb-chips { display: flex; gap: 6px; }
+.tb-chip { display: inline-flex; align-items: center; gap: 5px; background: var(--surface); border: 1px solid var(--border); border-radius: 50px; padding: 6px 12px; font-size: 13px; font-family: var(--font); color: var(--text-sub); cursor: pointer; white-space: nowrap; transition: background 0.15s, color 0.15s, border-color 0.15s; }
+.tb-chip:hover { border-color: var(--accent); color: var(--accent); }
+.tb-chip.on { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+.tb-chip-n { font-size: 11px; opacity: 0.7; }
+.tb-chip.on .tb-chip-n { opacity: 0.9; }
+.tb-sort { margin-left: auto; border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; font-size: 13px; font-family: var(--font); background: var(--surface); color: var(--text); cursor: pointer; }
 .tb-hint { font-size: 12px; color: var(--tb-empty-tx); text-align: center; margin: -2px 0 12px; }
 .tb-fab { position: fixed; right: 18px; bottom: 22px; width: 56px; height: 56px; border-radius: 50%; border: none; background: linear-gradient(135deg, var(--g-from) 0%, var(--g-to) 100%); color: #fff; font-size: 30px; line-height: 1; font-family: var(--font); cursor: pointer; box-shadow: 0 6px 20px rgba(56,173,108,0.45); z-index: 150; display: flex; align-items: center; justify-content: center; transition: transform 0.1s; }
 .tb-fab:active { transform: scale(0.92); }
@@ -252,7 +260,7 @@ body.tb-dragging .tb-item { cursor: grabbing; }
   /* タブは等分で横に伸ばさず、中央にまとめる（スマホ幅では等分のまま） */
   #app.wide .tabs { justify-content: center; }
   #app.wide .tab-btn { flex: 0 0 auto; min-width: 108px; padding: 12px 20px; }
-  #app.wide .tb-prog-card, #app.wide .tb-hint { max-width: 520px; margin-left: auto; margin-right: auto; }
+  #app.wide .tb-prog-card, #app.wide .tb-hint, #app.wide .tb-tools { max-width: 520px; margin-left: auto; margin-right: auto; }
   #app.wide .tb-buckets { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; align-items: start; }
 }
 
@@ -457,6 +465,9 @@ let S = {
   // 刻みを変えても age はそのまま残るので、項目が消えずに該当バケットへ移る。
   buckets: [],       // [{ id, text, age: number|null, status, doneAge: number|null, createdAt }]
   bucketCfg: null,   // { birthYear, startAge, step, endAge }
+  // バケットの絞り込み・並び順。画面上の状態なので保存しない（開き直すと「すべて／追加順」に戻る）
+  tbFilter: 'all',   // 'all' | 'active' | 'done' | 'stopped'
+  tbSort: 'created', // 'created' | 'status'
   newIcon: 'book', newColor: 'moss',
   openMemoDay: null,
 };
@@ -1447,12 +1458,26 @@ function tbRanges() { const c = tbCfg(); return tbMakeRanges(c.startAge, c.step,
 function tbLabel(r) { return r.start === r.end ? `${r.start}歳` : `${r.start}-${r.end}歳`; }
 function tbAge() { return TODAY.getFullYear() - tbCfg().birthYear; }
 
+function tbStatusOf(it) { return TB_STATUS[it.status] ? it.status : 'active'; }
+
+// 絞り込みと並び替えを適用した一覧を返す。
+// filter/sort は S.buckets を書き換えないよう、必ず新しい配列に対して行う
+function tbFiltered() {
+  const f = S.tbFilter || 'all';
+  const list = (S.buckets || []).filter(it => f === 'all' || tbStatusOf(it) === f);
+  const byCreated = (a, b) => (a.createdAt || 0) - (b.createdAt || 0);
+  if (S.tbSort === 'status') {
+    const rank = { active: 0, done: 1, stopped: 2 };
+    return list.sort((a, b) => (rank[tbStatusOf(a)] - rank[tbStatusOf(b)]) || byCreated(a, b));
+  }
+  return list.sort(byCreated);
+}
+
 // 項目を年代ごとに振り分ける。範囲外・未設定はそれぞれ別枠にまとめる
 function tbGroups() {
   const groups = tbRanges().map(r => ({ ...r, items: [] }));
   const outRange = [], unset = [];
-  const items = [...(S.buckets || [])].sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
-  items.forEach(it => {
+  tbFiltered().forEach(it => {
     if (!Number.isFinite(it.age)) { unset.push(it); return; }
     const g = groups.find(r => it.age >= r.start && it.age <= r.end);
     (g ? g.items : outRange).push(it);
@@ -1521,6 +1546,15 @@ function renderBucket() {
   const pct = denom > 0 ? Math.round(doneN / denom * 100) : 0;
   const nowG = groups.find(g => age >= g.start && age <= g.end);
 
+  // 絞り込みチップ。件数は絞り込みに関係なく全体の数を出す
+  const cnt = { all: items.length, active: 0, done: 0, stopped: 0 };
+  items.forEach(i => cnt[tbStatusOf(i)]++);
+  const curFilter = S.tbFilter || 'all';
+  const chips = [['all', 'すべて'], ...Object.entries(TB_STATUS)]
+    .map(([k, label]) => `<button class="tb-chip${curFilter === k ? ' on' : ''}" data-filter="${k}">${label}<span class="tb-chip-n">${cnt[k]}</span></button>`)
+    .join('');
+  const shown = groups.reduce((n, g) => n + g.items.length, 0) + outRange.length + unset.length;
+
   // dropAge に null を渡した枠はドラッグの受け入れ先にしない（範囲外は年代が決まらないため）
   const extraSection = (title, list, dropAge) => list.length ? `<div class="tb-bucket"${dropAge === null ? '' : ` data-drop-age="${dropAge}"`}>
       <div class="tb-bucket-head">
@@ -1559,7 +1593,17 @@ function renderBucket() {
       <div class="tb-prog-bar"><div class="tb-prog-fill" style="width:${pct}%"></div></div>
     </div>
 
-    <div class="tb-hint">カードを長押しすると、ドラッグで年代を移動できます</div>
+    <div class="tb-tools">
+      <div class="tb-chips">${chips}</div>
+      <select class="tb-sort" id="tb-sort">
+        <option value="created"${S.tbSort !== 'status' ? ' selected' : ''}>追加順</option>
+        <option value="status"${S.tbSort === 'status' ? ' selected' : ''}>進行中を上に</option>
+      </select>
+    </div>
+
+    <div class="tb-hint">${shown === 0 && items.length
+      ? '該当するやりたいことがありません'
+      : 'カードを長押しすると、ドラッグで年代を移動できます'}</div>
 
     <div class="tb-buckets">
       ${bucketHTML}
@@ -1629,6 +1673,13 @@ function tbOpenAddModal(presetAge) {
 function bindBucketEvents() {
   const page = document.getElementById('page-bucket');
   const nowStart = tbRanges().find(r => tbAge() >= r.start && tbAge() <= r.end)?.start ?? null;
+
+  // 絞り込みチップ・並び替え
+  page.querySelectorAll('.tb-chip').forEach(btn => {
+    btn.onclick = () => { S.tbFilter = btn.dataset.filter; renderBucket(); };
+  });
+  const sortSel = page.querySelector('#tb-sort');
+  sortSel.onchange = () => { S.tbSort = sortSel.value; renderBucket(); };
 
   // 右下の追加ボタン：現在の年代を初期選択にして追加画面を開く
   page.querySelector('#tb-fab').onclick = () => tbOpenAddModal(nowStart);
