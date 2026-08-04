@@ -218,6 +218,46 @@ PC・スマホの両方からブラウザでアクセスし、データはFireba
 - 変更後の範囲に収まらない項目は「範囲外」枠にまとめて表示し、元の年齢を保持する
 - 年代を選んでいない項目は「未設定」枠にまとめて表示する
 
+#### 共有リンク（読み取り専用）
+家族などにタイムバケットだけを見せるための機能。
+
+- ツールバーの「共有」ボタンから共有画面（中央のモーダル）を開く
+- 「共有リンクを作る」で、公開用のコピーを `shared/{shareId}` に作成する
+  - `shareId` は `crypto.getRandomValues` による128ビット（32桁の16進数）の乱数。推測できない
+  - URLは `<アプリのURL>?share=<shareId>`
+  - コピーする内容は `buckets` と `bucketCfg` のみ。**カレンダー・年間・体組成は含めない**
+  - 書き換え権限の判定用に `ownerUid` も持たせる
+- 共有中はリストを変更するたびに公開用コピーを自動更新する
+  - `save()` の最後に `tbSyncShare()` を呼ぶ
+  - 内容のハッシュ（JSON文字列）を比較し、変化がなければ書き込まない
+    （カレンダーのチェックなど、バケットと無関係な保存で毎回書き込まないため）
+- 「共有をやめる」で公開用コピーを削除する。発行済みのリンクは開けなくなる
+- 共有ボタンは共有中のとき「共有中」表示（アクセント色）に変わる
+
+#### 閲覧専用モード（`?share=` で開いた場合）
+- ログイン画面を出さず、Firestoreの公開用コピーだけを読んで表示する
+- `viewOnly = true` にして、以下を出さない
+  - タブ（バケット以外は表示しない）、設定ボタン
+  - 追加ボタン（FAB）、年代見出しの「＋」、編集ボタン、編集フォーム、共有ボタン
+  - 状態アイコンは `<button>` ではなく `<span class="tb-status-ro">` にして押せなくする
+  - ドラッグでの年代移動（`pointerdown` の時点で無効化）
+- 絞り込みチップと並び替えは残す（データを変更しないため）
+- `save()` は `viewOnly` のとき何もしない（二重の安全策）
+- 共有が停止されている場合は「この共有リンクは停止されています」と表示する
+
+#### Firebase セキュリティルール（共有リンク用に追加が必要）
+`shared` コレクションは未認証でも読めるようにする必要がある。
+本人以外が書き換えられないよう `ownerUid` で制限する。
+
+```javascript
+match /shared/{shareId} {
+  // リンクを知っていれば誰でも読める（ログイン不要）
+  allow read: if true;
+  allow create: if request.auth != null && request.resource.data.ownerUid == request.auth.uid;
+  allow update, delete: if request.auth != null && resource.data.ownerUid == request.auth.uid;
+}
+```
+
 #### PC表示
 - このタブのみ、PCでは横幅いっぱいに広げる（他タブは540px中央寄せのまま）
 - 画面幅900px以上で、年代を複数列のグリッド（1列あたり最小300px）で並べる
@@ -398,6 +438,9 @@ users/{userId}/
   │         createdAt: number            # 追加順の並び替えに使う
   │       }]
   │
+  ├── shareId/          # 共有リンクのID（発行していなければ null）
+  │   └── string | null
+  │
   └── bucketCfg/        # タイムバケットの年代設定
       └── {
             birthYear: number,
@@ -421,6 +464,12 @@ service cloud.firestore {
     match /users/{userId}/{document=**} {
       // 本人のみ読み書き可能
       allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    // タイムバケットの共有リンク用（リンクを知っていれば誰でも読める）
+    match /shared/{shareId} {
+      allow read: if true;
+      allow create: if request.auth != null && request.resource.data.ownerUid == request.auth.uid;
+      allow update, delete: if request.auth != null && resource.data.ownerUid == request.auth.uid;
     }
   }
 }

@@ -233,6 +233,18 @@ body.tb-dragging .tb-item { cursor: grabbing; }
 .tb-chip-n { font-size: 11px; opacity: 0.7; }
 .tb-chip.on .tb-chip-n { opacity: 0.9; }
 .tb-sort { margin-left: auto; border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; font-size: 13px; font-family: var(--font); background: var(--surface); color: var(--text); cursor: pointer; }
+.tb-share-btn { border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; font-size: 13px; font-family: var(--font); background: var(--surface); color: var(--text-sub); cursor: pointer; white-space: nowrap; transition: color 0.15s, border-color 0.15s; }
+.tb-share-btn:hover { border-color: var(--accent); color: var(--accent); }
+.tb-share-btn.on { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+.tb-share-note { font-size: 13px; color: var(--text-sub); line-height: 1.7; margin-bottom: 12px; }
+.tb-share-list { font-size: 13px; color: var(--text-sub); line-height: 1.8; margin: 0 0 12px 18px; }
+.tb-share-warn { font-size: 13px; color: var(--stop); line-height: 1.7; background: var(--bg); border-radius: 8px; padding: 9px 11px; margin-bottom: 14px; }
+.tb-share-urlrow { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
+.tb-share-urlrow .text-input { margin-bottom: 0; font-size: 13px; }
+.tb-share-copy { flex-shrink: 0; background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 10px 14px; font-size: 14px; font-weight: 600; font-family: var(--font); cursor: pointer; white-space: nowrap; }
+.tb-share-stop { width: 100%; background: none; border: 1px solid #E0B0B0; color: #C04040; border-radius: 10px; padding: 11px; font-size: 15px; font-family: var(--font); cursor: pointer; }
+.tb-share-stop:hover { background: #FEF0F0; }
+.tb-status-ro { cursor: default; }
 .tb-hint { font-size: 12px; color: var(--tb-empty-tx); text-align: center; margin: -2px 0 12px; }
 .tb-fab { position: fixed; right: 18px; bottom: 22px; width: 56px; height: 56px; border-radius: 50%; border: none; background: linear-gradient(135deg, var(--g-from) 0%, var(--g-to) 100%); color: #fff; font-size: 30px; line-height: 1; font-family: var(--font); cursor: pointer; box-shadow: 0 6px 20px rgba(56,173,108,0.45); z-index: 150; display: flex; align-items: center; justify-content: center; transition: transform 0.1s; }
 .tb-fab:active { transform: scale(0.92); }
@@ -465,6 +477,7 @@ let S = {
   // 刻みを変えても age はそのまま残るので、項目が消えずに該当バケットへ移る。
   buckets: [],       // [{ id, text, age: number|null, status, doneAge: number|null, createdAt }]
   bucketCfg: null,   // { birthYear, startAge, step, endAge }
+  shareId: null,     // 共有リンクのID（発行していなければ null）
   // バケットの絞り込み・並び順。画面上の状態なので保存しない（開き直すと「すべて／追加順」に戻る）
   tbFilter: 'all',   // 'all' | 'active' | 'done' | 'stopped'
   tbSort: 'created', // 'created' | 'status'
@@ -484,15 +497,17 @@ const DEFAULT_GOALS = [
 // デフォルト値で上書きされ、サーバー上の設定が失われるため。
 let dataLoaded = false;
 let saveErrorShown = false;
+// 共有リンク（?share=）で開いた閲覧専用モード。保存も編集もさせない
+let viewOnly = false;
 
 async function save() {
-  if (!currentUser || !dataLoaded) return;
+  if (!currentUser || !dataLoaded || viewOnly) return;
   try {
     await setDoc(doc(db, 'users', currentUser.uid), {
       goals: S.goals, checks: S.checks, memos: S.memos,
       monthMemos: S.monthMemos, yearGoals: S.yearGoals,
       yearMemos: S.yearMemos, bodyData: S.bodyData,
-      buckets: S.buckets, bucketCfg: tbCfg()
+      buckets: S.buckets, bucketCfg: tbCfg(), shareId: S.shareId ?? null
     }, { merge: true });
   } catch(e) {
     console.error('Firestore save error:', e);
@@ -501,6 +516,7 @@ async function save() {
       alert('保存に失敗しました [' + (e.code || e.message) + ']');
     }
   }
+  tbSyncShare();   // 共有中なら公開用のコピーも更新する（失敗しても本体の保存には影響させない）
 }
 
 async function loadFromFirestore() {
@@ -1505,6 +1521,18 @@ function tbItemHTML(it) {
     ? `<span class="tb-done-age">${it.doneAge}歳</span>` : '';
   const stOpts = Object.keys(TB_STATUS)
     .map(k => `<option value="${k}"${k === st ? ' selected' : ''}>${TB_STATUS[k]}</option>`).join('');
+  // 閲覧専用（共有リンク）では操作できる部品を出さない
+  if (viewOnly) {
+    return `<div class="tb-item-wrap">
+      <div class="tb-item ${st}">
+        <span class="tb-status tb-status-ro" style="color:${TB_COLOR[st]}" title="${TB_STATUS[st]}">${TB_SYM[st]}</span>
+        <div class="tb-item-body">
+          <div class="tb-item-text ${st}">${esc(it.text)}</div>
+        </div>
+        ${ageTag}
+      </div>
+    </div>`;
+  }
   return `<div class="tb-item-wrap">
     <div class="tb-item ${st}">
       <button class="tb-status" data-id="${esc(it.id)}" style="color:${TB_COLOR[st]}" title="${TB_STATUS[st]}（タップで切替）">${TB_SYM[st]}</button>
@@ -1572,7 +1600,7 @@ function renderBucket() {
         <span class="tb-bucket-age">${tbLabel(g)}</span>
         ${isNow ? '<span class="tb-now-badge">いま</span>' : ''}
         <span class="tb-bucket-count">${g.items.length ? g.items.length + '件' : ''}</span>
-        <button class="tb-add-here" data-age="${g.start}" title="この年代に追加">＋</button>
+        ${viewOnly ? '' : `<button class="tb-add-here" data-age="${g.start}" title="この年代に追加">＋</button>`}
       </div>
       ${g.items.map(tbItemHTML).join('')}
     </div>`;
@@ -1599,10 +1627,12 @@ function renderBucket() {
         <option value="created"${S.tbSort !== 'status' ? ' selected' : ''}>追加順</option>
         <option value="status"${S.tbSort === 'status' ? ' selected' : ''}>進行中を上に</option>
       </select>
+      ${viewOnly ? '' : `<button class="tb-share-btn${S.shareId ? ' on' : ''}" id="tb-share">${S.shareId ? '共有中' : '共有'}</button>`}
     </div>
 
     <div class="tb-hint">${shown === 0 && items.length
       ? '該当するやりたいことがありません'
+      : viewOnly ? '閲覧専用の共有ページです'
       : 'カードを長押しすると、ドラッグで年代を移動できます'}</div>
 
     <div class="tb-buckets">
@@ -1611,7 +1641,7 @@ function renderBucket() {
       ${extraSection('未設定', unset, '')}
     </div>
 
-    <button class="tb-fab" id="tb-fab" title="やりたいことを追加">＋</button>`;
+    ${viewOnly ? '' : '<button class="tb-fab" id="tb-fab" title="やりたいことを追加">＋</button>'}`;
 
   bindBucketEvents();
 }
@@ -1680,6 +1710,11 @@ function bindBucketEvents() {
   });
   const sortSel = page.querySelector('#tb-sort');
   sortSel.onchange = () => { S.tbSort = sortSel.value; renderBucket(); };
+
+  // 以降は編集用。共有リンクの閲覧では該当する要素自体を出していない
+  if (viewOnly) return;
+
+  page.querySelector('#tb-share').onclick = tbOpenShareModal;
 
   // 右下の追加ボタン：現在の年代を初期選択にして追加画面を開く
   page.querySelector('#tb-fab').onclick = () => tbOpenAddModal(nowStart);
@@ -1845,6 +1880,7 @@ function setupBucketDrag() {
   const page = document.getElementById('page-bucket');
 
   page.addEventListener('pointerdown', e => {
+    if (viewOnly) return;                                        // 共有リンクの閲覧では動かさない
     if (e.button) return;                                        // 左ボタン/タッチのみ
     if (e.target.closest('.tb-status, .tb-item-edit')) return;    // ボタンは対象外
     const item = e.target.closest('.tb-item');
@@ -1873,6 +1909,175 @@ function setupBucketDrag() {
     e.stopPropagation();
     e.preventDefault();
   }, true);
+}
+
+// ── Time bucket: 読み取り専用の共有リンク ─────────────────────────────────
+// 公開用のコピーを shared/{ランダムID} に置き、?share=ID で誰でも閲覧できるようにする。
+// タイムバケットだけをコピーするので、カレンダーや体組成は絶対に含まれない。
+
+// 推測できないIDにする（128ビットの乱数）
+function tbNewShareId() {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return [...bytes].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function tbShareUrl(id) {
+  return location.origin + location.pathname + '?share=' + id;
+}
+
+function tbSharePayload() {
+  return {
+    ownerUid: currentUser.uid,          // セキュリティルールで本人だけが書き換えられるようにするため
+    buckets: S.buckets || [],
+    bucketCfg: tbCfg(),
+    updatedAt: Date.now(),
+  };
+}
+
+let lastSharedSig = null;
+
+// 共有中のとき、内容が変わっていれば公開用コピーを更新する
+async function tbSyncShare() {
+  if (!S.shareId || !currentUser || viewOnly) return;
+  const sig = JSON.stringify({ b: S.buckets || [], c: tbCfg() });
+  if (sig === lastSharedSig) return;   // 変化がなければ書き込まない
+  try {
+    await setDoc(doc(db, 'shared', S.shareId), tbSharePayload());
+    lastSharedSig = sig;               // 成功したときだけ記録し、失敗時は次回また試す
+  } catch (e) {
+    console.warn('共有リンクの更新に失敗しました:', e);
+  }
+}
+
+async function tbPublishShare() {
+  const id = S.shareId || tbNewShareId();
+  await setDoc(doc(db, 'shared', id), tbSharePayload());
+  S.shareId = id;
+  lastSharedSig = JSON.stringify({ b: S.buckets || [], c: tbCfg() });
+  await save();
+  if (S.tab === 'bucket') renderBucket();   // 共有ボタンの表示を「共有中」に切り替える
+  return id;
+}
+
+async function tbStopShare() {
+  if (!S.shareId) return;
+  await deleteDoc(doc(db, 'shared', S.shareId));
+  S.shareId = null;
+  lastSharedSig = null;
+  await save();
+  if (S.tab === 'bucket') renderBucket();
+}
+
+function tbOpenShareModal() {
+  const modal = document.getElementById('modal-body');
+  const render = () => {
+    const id = S.shareId;
+    modal.innerHTML = `
+      <div class="tb-modal-head">
+        <div class="modal-h">共有リンク</div>
+        <button class="tb-modal-close" id="tb-sh-close" title="閉じる">✕</button>
+      </div>
+      ${id ? `
+        <p class="tb-share-note">このリンクを知っている人は、ログインなしでタイムバケットを見られます。</p>
+        <div class="tb-share-urlrow">
+          <input class="text-input" id="tb-share-url" type="text" readonly value="${esc(tbShareUrl(id))}">
+          <button class="tb-share-copy" id="tb-sh-copy">コピー</button>
+        </div>
+        <p class="tb-share-note">リストを変更すると、共有されている内容も自動で更新されます。</p>
+        <p class="tb-share-warn">リンクが他の人に転送されると、その人も見られます。SNSなどに載せないでください。</p>
+        <button class="tb-share-stop" id="tb-sh-stop">共有をやめる</button>
+      ` : `
+        <p class="tb-share-note">家族などにタイムバケットだけを見てもらうためのリンクを作ります。</p>
+        <ul class="tb-share-list">
+          <li>相手はログイン不要。リンクを開くだけです</li>
+          <li>見るだけで、追加や編集はできません</li>
+          <li>カレンダー・年間・体組成は含まれません</li>
+          <li>いつでも「共有をやめる」でリンクを無効にできます</li>
+        </ul>
+        <p class="tb-share-warn">リンクを知っている人は誰でも見られます。SNSなどに載せないでください。</p>
+        <button class="add-goal-btn" id="tb-sh-make">共有リンクを作る</button>
+      `}`;
+
+    modal.querySelector('#tb-sh-close').onclick = closeModal;
+
+    const makeBtn = modal.querySelector('#tb-sh-make');
+    if (makeBtn) makeBtn.onclick = async () => {
+      makeBtn.disabled = true;
+      makeBtn.textContent = '作成中...';
+      try {
+        await tbPublishShare();
+        render();
+      } catch (e) {
+        console.error('share publish error:', e);
+        alert('共有リンクを作れませんでした [' + (e.code || e.message) + ']\nFirebaseのセキュリティルールに shared の設定が必要です。');
+        makeBtn.disabled = false;
+        makeBtn.textContent = '共有リンクを作る';
+      }
+    };
+
+    const copyBtn = modal.querySelector('#tb-sh-copy');
+    if (copyBtn) copyBtn.onclick = async () => {
+      const url = tbShareUrl(S.shareId);
+      try {
+        await navigator.clipboard.writeText(url);
+        copyBtn.textContent = 'コピーしました';
+      } catch {
+        // クリップボードが使えない環境では選択状態にして手動コピーしてもらう
+        const inp = modal.querySelector('#tb-share-url');
+        inp.focus(); inp.select(); inp.setSelectionRange(0, 99999);
+        copyBtn.textContent = '選択しました';
+      }
+      setTimeout(() => { if (copyBtn.isConnected) copyBtn.textContent = 'コピー'; }, 1600);
+    };
+
+    const stopBtn = modal.querySelector('#tb-sh-stop');
+    if (stopBtn) stopBtn.onclick = async () => {
+      if (!confirm('共有をやめますか？\n発行済みのリンクは開けなくなります。')) return;
+      stopBtn.disabled = true;
+      stopBtn.textContent = '停止中...';
+      try {
+        await tbStopShare();
+        render();
+      } catch (e) {
+        console.error('share stop error:', e);
+        alert('共有の停止に失敗しました [' + (e.code || e.message) + ']');
+        stopBtn.disabled = false;
+        stopBtn.textContent = '共有をやめる';
+      }
+    };
+  };
+  render();
+  document.getElementById('overlay').classList.add('open', 'center');
+}
+
+// ?share=ID で開かれたときの閲覧専用ビュー
+async function initShareView(shareId) {
+  viewOnly = true;
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = '';
+  document.getElementById('settings-btn').style.display = 'none';
+  document.querySelector('.tabs').style.display = 'none';
+  const page = document.getElementById('page-bucket');
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  page.classList.add('active');
+  document.getElementById('app').classList.add('wide');
+  page.innerHTML = '<div class="empty-msg">読み込んでいます...</div>';
+  try {
+    const snap = await getDoc(doc(db, 'shared', shareId));
+    if (!snap.exists()) {
+      page.innerHTML = '<div class="empty-msg">この共有リンクは停止されています</div>';
+      return;
+    }
+    const d = snap.data();
+    S.buckets = Array.isArray(d.buckets) ? d.buckets : [];
+    S.bucketCfg = d.bucketCfg || null;
+    S.tab = 'bucket';
+    renderBucket();
+  } catch (e) {
+    console.error('share load error:', e);
+    page.innerHTML = '<div class="empty-msg">共有リンクを開けませんでした</div>';
+  }
 }
 
 // 設定画面の入力値を検証する。問題なければ空文字を返す
@@ -2183,6 +2388,11 @@ try {
 // 通信が遅い・失敗する場合でもログインボタンや画面の操作はブロックされない。
 loadIcons();
 
+// ?share=ID で開かれた場合はログインを挟まず、閲覧専用ページとして表示する
+const shareParam = new URLSearchParams(location.search).get('share');
+if (shareParam) {
+  initShareView(shareParam);
+} else {
 onAuthStateChanged(auth, async user => {
   currentUser = user;
   if (user) {
@@ -2216,6 +2426,7 @@ onAuthStateChanged(auth, async user => {
     if (headerUser) headerUser.innerHTML = '';
   }
 });
+}
 </script>
 </body>
 </html>
