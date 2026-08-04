@@ -107,6 +107,8 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); font
 .section-label { font-size: 13px; font-weight: 600; color: var(--text-sub); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; display: block; }
 .big-textarea { width: 100%; border: 1px solid var(--border); border-radius: 10px; padding: 12px; font-size: 16px; font-family: var(--font); background: var(--bg); color: var(--text); resize: vertical; min-height: 80px; }
 .big-textarea:focus { outline: none; border-color: var(--accent); }
+/* PCは横幅に余裕があり折り返しが少ない分、縦が窮屈になりやすいので初期の高さを広げる */
+@media (min-width: 768px) { .big-textarea { min-height: 240px; } }
 
 /* Text view / edit pattern */
 .section-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
